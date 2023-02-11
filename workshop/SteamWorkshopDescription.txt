@@ -1,0 +1,5 @@
+Allows Unlock Tokens to appear in Expedition and makes Token/Pearl progress shared between main and expedition.
+
+Feels wrong doing a Pearl delivery challenge just to not end up having it in your collection menu.
+
+It's not shared in the normal game because Expedition uses it's own save file and they didn't add support for shared progress. 
