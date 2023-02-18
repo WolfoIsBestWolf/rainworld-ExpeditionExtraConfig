@@ -7,10 +7,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="old\backupold.cs" />
-    <Compile Remove="old\old.cs" />
-    <Compile Remove="old\Pearls.cs" />
-    <Compile Remove="old\Tokens.cs" />
+    <Compile Remove="backupold\**" />
+    <Compile Remove="old\**" />
+    <EmbeddedResource Remove="backupold\**" />
+    <EmbeddedResource Remove="old\**" />
+    <None Remove="backupold\**" />
+    <None Remove="old\**" />
   </ItemGroup>
 
 
@@ -47,9 +49,6 @@
 	  </Reference>
 	  <Reference Include="HOOKS-Assembly-CSharp">
 	    <HintPath>..\..\..\..\Program Files (x86)\Steam\steamapps\common\Rain World\BepInEx\plugins\HOOKS-Assembly-CSharp.dll</HintPath>
-	  </Reference>
-	  <Reference Include="Microsoft.Win32.Registry">
-	    <HintPath>..\..\..\..\Program Files (x86)\Steam\steamapps\common\Rain World\RainWorld_Data\Managed\Microsoft.Win32.Registry.dll</HintPath>
 	  </Reference>
 	  <Reference Include="Mono.Cecil">
 	    <HintPath>..\..\..\..\Program Files (x86)\Steam\steamapps\common\Rain World\RainWorld_Data\Managed\Mono.Cecil.dll</HintPath>
@@ -111,12 +110,6 @@
 	  <Reference Include="System.IO.Compression" />
 	  <Reference Include="System.Net.Http" />
 	  <Reference Include="System.Runtime.Serialization.Xml" />
-	  <Reference Include="System.Security.AccessControl">
-	    <HintPath>..\..\..\..\Program Files (x86)\Steam\steamapps\common\Rain World\RainWorld_Data\Managed\System.Security.AccessControl.dll</HintPath>
-	  </Reference>
-	  <Reference Include="System.Security.Principal.Windows">
-	    <HintPath>..\..\..\..\Program Files (x86)\Steam\steamapps\common\Rain World\RainWorld_Data\Managed\System.Security.Principal.Windows.dll</HintPath>
-	  </Reference>
 	  <Reference Include="System.ServiceModel.Internals">
 	    <HintPath>..\..\..\..\Program Files (x86)\Steam\steamapps\common\Rain World\RainWorld_Data\Managed\System.ServiceModel.Internals.dll</HintPath>
 	  </Reference>
@@ -300,11 +293,6 @@
 	  <Reference Include="UnityEngine.UnityWebRequestTextureModule">
 	    <HintPath>..\..\..\..\Program Files (x86)\Steam\steamapps\common\Rain World\RainWorld_Data\Managed\UnityEngine.UnityWebRequestTextureModule.dll</HintPath>
 	  </Reference>
-	</ItemGroup>
-
-
-	<ItemGroup>
-	  <Folder Include="old\" />
 	</ItemGroup>
 
 </Project>

@@ -17,71 +17,247 @@ namespace ExpeditionExtraConfig
         public void OnEnable()
         {
             On.RainWorld.OnModsInit += AddConfigHook;
-            On.RainWorldGame.ctor += AddILHooks;
-
-            On.WorldLoader.OverseerSpawnConditions += SpearSunOverseer;
-            On.RainCycle.GetDesiredCycleLength += RivuletRainCycle;
-            On.Expedition.ExpeditionGame.IsMSCRoomScript += RivuletAllowPebblesBall;
-
-            On.SaveState.ctor += ChangeStartingKarma; 
-            On.Expedition.ExpeditionGame.PrepareExpedition += ExpeditionGame_PrepareExpedition;
-            On.SlugcatStats.SlugcatStartingKarma += SlugcatStats_SlugcatStartingKarma;
-
-            On.Expedition.AchievementChallenge.ValidForThisSlugcat += AchievementChallenge_ValidForThisSlugcat;
-            On.Expedition.PearlDeliveryChallenge.RegionPoints += PearlDeliveryChallenge_RegionPoints;
-            On.Expedition.ExpeditionGame.GetRegionWeight += ExpeditionGame_GetRegionWeight;
-
-
-            On.Player.ctor += StartWithStomachPearl;
+            On.RainWorldGame.ctor += AddILHooks; //Update this shit to be two way
+            On.RainWorld.PostModsInit += OnHooks; //This is after config is loaded
         }
 
-        private void StartWithStomachPearl(On.Player.orig_ctor orig, Player self, AbstractCreature abstractCreature, World world)
+
+        public void OnHooks(On.RainWorld.orig_PostModsInit orig, RainWorld self)
+        {
+            orig(self);
+            Debug.Log("ExpeditionExtraConfig: On Hooks being added");
+
+            On.SlugcatStats.SlugcatStartingKarma += GhostKarma_SlugcatStartingKarma;
+            On.GhostWorldPresence.SpawnGhost += GhostCharacterEncounterMechanics;
+            On.SSOracleBehavior.SeePlayer += PebblesIncreaseKarma; //Handles SpearOverseer too so
+
+            On.Player.ctor += StartWithStomachPearl; //Handles Pearl and Ballin
+            On.SaveState.ctor += ChangeStartingStats;
+            On.Expedition.ExpeditionGame.PrepareExpedition += ChangeStartingKarma_PrepareExpedition;
+
+            if (EECSettings.cfgRivuletShortCycles.Value)
+            {
+                On.Expedition.CycleScoreChallenge.Generate += Riv.RivuletFriendlyCycleScore;
+            }
+            if (EECSettings.cfgMoreRegions.Value)
+            {
+                On.Menu.ExpeditionMenu.ExpeditionSetup += ExpeditionMenu_ExpeditionSetup;
+                On.Expedition.PearlDeliveryChallenge.Generate += AllowMoreRegions_PearlDelivery;
+                On.Expedition.ChallengeTools.ValidRegionPearl += EquipvelantRegions_ValidRegionPearl;
+                On.Expedition.PearlDeliveryChallenge.RegionPoints += Score.PearlDeliveryChallenge_RegionPoints;
+                //On.SlugcatStats.getSlugcatStoryRegions += SlugcatStats_getSlugcatStoryRegions; //Big Jellyfish aren't counted and there's not really any other unique enemy to parse in MS
+            }
+
+            Score.OnEnable();
+            
+           
+            On.Expedition.ChallengeTools.GenerateCreatureScores += NoTerrorLongLegs;
+            
+            On.Expedition.ExpeditionGame.GetRegionWeight += ExpeditionGame_GetRegionWeight; //More Garbage Wastes!!!!
+            On.Expedition.AchievementChallenge.ValidForThisSlugcat += AchievementChallenge_ValidForThisSlugcat;
+            //On.MoreSlugcats.MSCRoomSpecificScript.LC_FINAL.TriggerFadeToEnding += ArtificerEarlyExpeditionEnd;
+        }
+
+        private void ExpeditionMenu_ExpeditionSetup(On.Menu.ExpeditionMenu.orig_ExpeditionSetup orig, Menu.ExpeditionMenu self)
+        {
+            orig(self);
+            //Debug.Log("ExpeditionExtraConfig: ExpeditionMenu_ExpeditionSetup");
+            ChallengeTools.echoScores[(int)MoreSlugcatsEnums.GhostID.MS] = 90;
+            ChallengeTools.PearlRegionBlackList.Remove("LM");
+
+            IL.Expedition.EchoChallenge.Generate -= EchoChallengeAddMSEcho;
+            IL.Expedition.EchoChallenge.Generate += EchoChallengeAddMSEcho;
+        }
+
+        private void EchoChallengeAddMSEcho(ILContext il)
+        {
+            ILCursor c = new(il);
+            if (c.TryGotoNext(MoveType.Before,
+            x => x.MatchCallOrCallvirt("System.Collections.Generic.List`1<System.String>", "get_Item"),
+            x => x.MatchCallOrCallvirt("System.Collections.Generic.List`1<System.String>", "Add")
+            ))
+            {
+                c.Index -= 3;
+                c.EmitDelegate<Func<List<string>, List<string>>>((list) =>
+                {
+                    if (Custom.rainWorld.ExpeditionMode && ExpeditionData.challengeDifficulty > 0.75f && ExpeditionData.slugcatPlayer == MoreSlugcatsEnums.SlugcatStatsName.Saint)
+                    {
+                        if (!list.Contains("MS"))
+                        {
+                            list.Add("MS");
+                        }
+                    }
+                    return list;
+                });
+                Debug.Log("ExpeditionExtraConfig: Allow MS Echo Saint IL Success");
+            }
+            else
+            {
+                Debug.Log("ExpeditionExtraConfig: Allow MS Echo Saint IL Failed");
+            }
+        }
+
+        private void NoTerrorLongLegs(On.Expedition.ChallengeTools.orig_GenerateCreatureScores orig, ref Dictionary<string, int> dict)
+        {
+            orig(ref dict);
+            if (dict.ContainsKey("TerrorLongLegs"))
+            {
+                if (EECSettings.cfgBetterBlacklist.Value)
+                {
+                    //Debug.Log("ExpeditionExtraConfig: Remove Mother Long Legs");
+                    dict.Remove("TerrorLongLegs", out _);
+                }
+                else
+                {
+                    dict["TerrorLongLegs"] = 50; //Bro really gave Mommy Long Legs same as Daddy Long Legs
+                }
+            }
+        }
+
+        public bool GhostCharacterEncounterMechanics(On.GhostWorldPresence.orig_SpawnGhost orig, GhostWorldPresence.GhostID ghostID, int karma, int karmaCap, int ghostPreviouslyEncountered, bool playingAsRed)
+        {
+            if (Custom.rainWorld.ExpeditionMode && Custom.rainWorld.progression.currentSaveState.cycleNumber > 0)
+            {
+                if (Custom.rainWorld.progression.PlayingAsSlugcat == MoreSlugcatsEnums.SlugcatStatsName.Artificer)
+                {
+                    Debug.Log("Artificer only when max Karma and previous encounter");
+                    if (karma >= karmaCap)
+                    {
+                        return ghostPreviouslyEncountered < 2;
+                    }
+                }
+                if (Custom.rainWorld.progression.PlayingAsSlugcat == MoreSlugcatsEnums.SlugcatStatsName.Saint)
+                {
+                    Debug.Log("Saint regardless of Karma and previous encounter");
+                    return ghostPreviouslyEncountered < 2;
+                }
+            }
+            return orig(ghostID, karma, karmaCap, ghostPreviouslyEncountered, playingAsRed);
+        }
+
+        public void PebblesIncreaseKarma(On.SSOracleBehavior.orig_SeePlayer orig, SSOracleBehavior self)
+        {
+            Debug.Log("Iterator is seeing Player");
+            if(self.oracle.room.game.rainWorld.ExpeditionMode && self.oracle.ID == Oracle.OracleID.SS)
+            {
+                if (EECSettings.cfgPebblesIncreaseKarma.Value && self.oracle.room.game.GetStorySession.saveState.miscWorldSaveData.SSaiConversationsHad == 55 && (self.oracle.room.game.StoryCharacter == SlugcatStats.Name.White || self.oracle.room.game.StoryCharacter == SlugcatStats.Name.Yellow || self.oracle.room.game.StoryCharacter == SlugcatStats.Name.Red || self.oracle.room.game.StoryCharacter == MoreSlugcatsEnums.SlugcatStatsName.Gourmand))
+                {
+                    self.oracle.room.game.GetStorySession.saveState.miscWorldSaveData.SSaiConversationsHad++;
+                    self.SlugcatEnterRoomReaction();
+                    self.NewAction(SSOracleBehavior.Action.General_GiveMark);
+                    self.afterGiveMarkAction = SSOracleBehavior.Action.ThrowOut_ThrowOut;
+                    return;
+                }
+                else if (self.oracle.room.game.GetStorySession.saveState.miscWorldSaveData.SSaiConversationsHad == -55 && self.oracle.room.game.StoryCharacter == MoreSlugcatsEnums.SlugcatStatsName.Spear)
+                {
+                    self.NewAction(SSOracleBehavior.Action.ThrowOut_KillOnSight);
+                    self.afterGiveMarkAction = SSOracleBehavior.Action.ThrowOut_KillOnSight;
+                    return;
+                }
+            }
+            orig(self);
+        }
+
+        public Challenge AllowMoreRegions_PearlDelivery(On.Expedition.PearlDeliveryChallenge.orig_Generate orig, PearlDeliveryChallenge self)
+        {
+            if (ExpeditionData.slugcatPlayer == MoreSlugcatsEnums.SlugcatStatsName.Rivulet && ChallengeTools.PearlRegionBlackList.Contains("MS"))
+            {
+                ChallengeTools.PearlRegionBlackList.Remove("MS");
+                //Debug.Log("Remove MS from Blacklist");
+            }
+            else if (!ChallengeTools.PearlRegionBlackList.Contains("MS"))
+            {
+                ChallengeTools.PearlRegionBlackList.Add("MS");
+                //Debug.Log("ReAdd MS from Blacklist");
+            }
+            return orig(self);
+        }
+
+
+        public void ArtificerEarlyExpeditionEnd(On.MoreSlugcats.MSCRoomSpecificScript.LC_FINAL.orig_TriggerFadeToEnding orig, MSCRoomSpecificScript.LC_FINAL self)
+        {
+            if(self.room.game.rainWorld.ExpeditionMode)
+            {
+                if (self.endingTriggerTime == 0)
+                {
+                    new FadeOut(self.room, Color.black, 290f, false);
+                    self.player.controller = new Player.NullController();
+                }
+                else if (self.endingTriggerTime == 300)
+                {
+                    ExpeditionGame.voidSeaFinish = true;
+                    ExpeditionGame.expeditionComplete = true;
+                    return;
+                }
+                self.endingTriggerTime++;
+                return;
+            }
+            orig(self);
+        }
+
+        public bool EquipvelantRegions_ValidRegionPearl(On.Expedition.ChallengeTools.orig_ValidRegionPearl orig, string region, DataPearl.AbstractDataPearl.DataPearlType type)
+        {
+            string b = type.value.Substring(0, 2);
+            if (region == "MS" && type.value == "DM" || region == "LM" && b == "SL" || region == "SS" && type.value == "PebblesPearl")
+            {
+                return true;
+            }
+            return orig(region, type);
+        }
+
+        public void StartWithStomachPearl(On.Player.orig_ctor orig, Player self, AbstractCreature abstractCreature, World world)
         {
             orig(self, abstractCreature, world);
-            Debug.Log(world.rainCycle.CycleProgression);
-            if (world.game.rainWorld.ExpeditionMode && world.game.rainWorld.progression.currentSaveState.cycleNumber == 0 && world.rainCycle.CycleProgression <= 2f)
+            //Debug.Log("Player_ctor");
+            if (world.game.rainWorld.ExpeditionMode && world.game.rainWorld.progression.currentSaveState.cycleNumber == 0 && self.abstractCreature.Room.name == ExpeditionData.startingDen && world.rainCycle.CycleProgression <= 2f)
             {
-                Debug.Log("Pearl");
-                if (self.SlugCatClass == SlugcatStats.Name.Red)
+                if (EECSettings.cfgStomachPearl.Value && self.SlugCatClass == SlugcatStats.Name.Red)
                 {
                     world.game.FirstRealizedPlayer.objectInStomach = new DataPearl.AbstractDataPearl(world, AbstractPhysicalObject.AbstractObjectType.DataPearl, null, abstractCreature.spawnDen, world.game.GetNewID(), -1, -1, null, DataPearl.AbstractDataPearl.DataPearlType.Red_stomach);
                 }
                 else if (self.SlugCatClass == MoreSlugcatsEnums.SlugcatStatsName.Rivulet)
                 {
-                    world.game.FirstRealizedPlayer.objectInStomach = new DataPearl.AbstractDataPearl(world, AbstractPhysicalObject.AbstractObjectType.DataPearl, null, abstractCreature.spawnDen, world.game.GetNewID(), -1, -1, null, MoreSlugcatsEnums.DataPearlType.Rivulet_stomach);
+                    if (EECSettings.cfgStomachPearl.Value)
+                    {
+                        world.game.FirstRealizedPlayer.objectInStomach = new DataPearl.AbstractDataPearl(world, AbstractPhysicalObject.AbstractObjectType.DataPearl, null, abstractCreature.spawnDen, world.game.GetNewID(), -1, -1, null, MoreSlugcatsEnums.DataPearlType.Rivulet_stomach);
+                    }
+
+                    if (EECSettings.cfgRivuletBall.Value && self.abstractCreature.Room.realizedRoom.shelterDoor != null)
+                    {
+                        Debug.Log("Rivulet is ballin");
+                        WorldCoordinate pos3 = new WorldCoordinate(self.abstractCreature.Room.index, self.abstractCreature.Room.realizedRoom.shelterDoor.playerSpawnPos.x, self.abstractCreature.Room.realizedRoom.shelterDoor.playerSpawnPos.y, 0);
+                        AbstractPhysicalObject abstractPhysicalBall = new AbstractPhysicalObject(world, MoreSlugcatsEnums.AbstractObjectType.EnergyCell, null, pos3, world.game.GetNewID());
+                        self.abstractCreature.Room.entities.Add(abstractPhysicalBall);
+                        abstractPhysicalBall.RealizeInRoom();
+                    }
+
                 }
-                
-            }
-            Debug.Log("Player_ctor 222222222222222222222222222222222222222");
-        }
 
-        private bool RivuletAllowPebblesBall(On.Expedition.ExpeditionGame.orig_IsMSCRoomScript orig, UpdatableAndDeletable item)
-        {
-            if (item is MSCRoomSpecificScript.RM_CORE_EnergyCell)
-            {
-                return false;
             }
-            return orig(item);
         }
 
 
-        private void ExpeditionGame_PrepareExpedition(On.Expedition.ExpeditionGame.orig_PrepareExpedition orig)
+
+
+        public void ChangeStartingKarma_PrepareExpedition(On.Expedition.ExpeditionGame.orig_PrepareExpedition orig)
         {
             orig(); 
-            Expedition.ExpeditionGame.tempKarma = EECSettings.cfgKarmaStart.Value;
-            if (ExpeditionData.slugcatPlayer == MoreSlugcatsEnums.SlugcatStatsName.Rivulet)
+            Expedition.ExpeditionGame.tempKarma = EECSettings.cfgKarmaStart.Value-1;
+            if (ExpeditionData.slugcatPlayer == SlugcatStats.Name.Red)
             {
-
+                ExpeditionGame.tempKarma += EECSettings.cfgHunterPlusKarma.Value;
             }
-            Debug.Log("ExpeditionGame_PrepareExpedition " + ExpeditionData.slugcatPlayer.value);
+            Math.Min((ExpeditionGame.tempKarma - 1), (EECSettings.cfgKarmaCapStart.Value - 1));
+            //Debug.Log("ChangeStartingKarma_PrepareExpedition " + ExpeditionData.slugcatPlayer.value);
         }
 
-        private void ChangeStartingKarma(On.SaveState.orig_ctor orig, SaveState self, SlugcatStats.Name saveStateNumber, PlayerProgression progression)
+        public void ChangeStartingStats(On.SaveState.orig_ctor orig, SaveState self, SlugcatStats.Name saveStateNumber, PlayerProgression progression)
         {
             orig(self, saveStateNumber, progression);
+            Debug.Log("SaveState_ctor");
             if (Custom.rainWorld.ExpeditionMode)
             {
-                self.deathPersistentSaveData.karmaCap = EECSettings.cfgKarmaCapStart.Value; 
+                self.deathPersistentSaveData.karmaCap = EECSettings.cfgKarmaCapStart.Value - 1; 
                 //self.deathPersistentSaveData.karma = ExpeditionGame.tempKarma; //Temp Karma used to circumvent setting Karma each start
                 if (saveStateNumber == MoreSlugcatsEnums.SlugcatStatsName.Rivulet && EECSettings.cfgRivuletShortCycles.Value)
                 {
@@ -91,101 +267,74 @@ namespace ExpeditionExtraConfig
                 {
                     self.hasRobo = true;
                 }
+                else if (saveStateNumber == MoreSlugcatsEnums.SlugcatStatsName.Spear && EECSettings.cfgSpearOverseer.Value)
+                {
+                    self.miscWorldSaveData.SSaiConversationsHad = -55;
+                }
+                else if (EECSettings.cfgPebblesIncreaseKarma.Value && (saveStateNumber == MoreSlugcatsEnums.SlugcatStatsName.Gourmand || saveStateNumber == SlugcatStats.Name.Red || saveStateNumber == SlugcatStats.Name.White || saveStateNumber == SlugcatStats.Name.Yellow))
+                {
+                    self.miscWorldSaveData.SSaiConversationsHad = 55;
+                }
             }
         }
 
 
-        private int SlugcatStats_SlugcatStartingKarma(On.SlugcatStats.orig_SlugcatStartingKarma orig, SlugcatStats.Name slugcatNum)
+        public int GhostKarma_SlugcatStartingKarma(On.SlugcatStats.orig_SlugcatStartingKarma orig, SlugcatStats.Name slugcatNum)
         {
             if (RWCustom.Custom.rainWorld.ExpeditionMode)
             {
-                if (ModManager.MSC && slugcatNum == MoreSlugcatsEnums.SlugcatStatsName.Artificer)
+                if (!EECSettings.cfgGhostsIncreaseKarma.Value)
+                {
+                    //Does a >= for the results so even if the result is negative it wont change
+                    return -50;
+                }
+                /*if (ModManager.MSC && slugcatNum == MoreSlugcatsEnums.SlugcatStatsName.Artificer)
                 {
                     return 4;
                 }
                 if (ModManager.MSC && slugcatNum == MoreSlugcatsEnums.SlugcatStatsName.Saint)
                 {
                     return 4;
-                }
-                return EECSettings.cfgKarmaCapStart.Value;
+                }*/
+                return EECSettings.cfgKarmaCapStart.Value - 1;
             }
             return orig(slugcatNum);
         }
 
-        private static int RivuletRainCycle(On.RainCycle.orig_GetDesiredCycleLength orig, RainCycle self)
+
+        public static void AddILHooks(On.RainWorldGame.orig_ctor orig, RainWorldGame game, ProcessManager manager)
         {
-            if (self.world.game.rainWorld.ExpeditionMode && ModManager.MSC && !self.world.singleRoomWorld && (self.world.game.session as StoryGameSession).saveState.saveStateNumber == MoreSlugcatsEnums.SlugcatStatsName.Rivulet)
-            {   
-                int num = orig(self);
-                float multi = EECSettings.cfgRivuletBonusRain.Value;
-
-                if (self.world.region.name == "VS" || self.world.region.name == "UW" || self.world.region.name == "SH" || self.world.region.name == "SB" || self.world.region.name == "SL")
-                {
-                    num = (int)(num * multi / 1.5f);
-                }
-                else
-                {
-                    num = (int)(num * multi);
-                }
-                return num;
-            }
-            return orig(self);
-        }
-
-        private bool SpearSunOverseer(On.WorldLoader.orig_OverseerSpawnConditions orig, WorldLoader self, SlugcatStats.Name character)
-        {
-            //World tempWorld = self.ReturnWorld();
-            if (ModManager.MSC && character == MoreSlugcatsEnums.SlugcatStatsName.Spear && RWCustom.Custom.rainWorld.ExpeditionMode)
-            {
-                if (self.ReturnWorld() != null && (self.ReturnWorld().region.name != "SS" || self.ReturnWorld().region.name != "DM"))
-                {
-                    return true;
-                }
-            }
-
-            return orig(self, character);
-        }
-
-        private void AddConfigHook(On.RainWorld.orig_OnModsInit orig, RainWorld self)
-        {
-            orig(self);
-            Debug.Log("ExpeditionExtraConfig: Wolfo Mod Loaded");
-            MachineConnector.SetRegisteredOI("ExpeditionExtraConfig", EECSettings.instance);
-        }
-
-        private static void AddILHooks(On.RainWorldGame.orig_ctor orig, RainWorldGame game, ProcessManager manager)
-        {
-            Debug.Log("ExpdExConfig: IL Hooks being added");
+            Debug.Log("ExpeditionExtraConfig: IL Hooks being added");
             if (EECSettings.cfgKarmaFlower.Value)
             {
                 IL.Room.Loaded += EnableNaturalKarmaFlower;
             }
+            /*if (EECSettings.cfgArtificerRobo.Value)
+            {
+                IL.GateKarmaGlyph.ctor += ArtificerGateWrongSymbol;
+            }*/
             if (EECSettings.cfgRivuletShortCycles.Value)
             {
-                IL.RainCycle.ctor += RivuletShelterFailure;
-            }
-            if (EECSettings.cfgRivuletBonusRain.Value == 1)
-            {
-                On.RainCycle.GetDesiredCycleLength -= RivuletRainCycle;
+                IL.RainCycle.ctor += Riv.RivuletShelterFailure;
+                On.RainCycle.GetDesiredCycleLength += Riv.RivuletRainCycle;
+                On.Expedition.ExpeditionGame.IsMSCRoomScript += Riv.RivuletAllowPebblesBall;
             }
             if (EECSettings.cfgSaintAscendPoints.Value)
             {
                 IL.Player.ClassMechanicsSaint += SaintAscendMurder;
             }
+          
+            IL.Menu.GhostEncounterScreen.GetDataFromGame += GhostEncounterScreen_GetDataFromGame; //Expedition always pretends you have 4 Karma for this screen specifically,Probably fine to always have this
+            IL.StoryGameSession.ctor += StoryGameSession_ctor; //Will limit all Karma to max 4 in Expd. But also main thing that removes Ghosts increasing Karma
 
-
-            IL.Menu.GhostEncounterScreen.GetDataFromGame += GhostEncounterScreen_GetDataFromGame; //Probably fine to always have this
-
-            IL.StoryGameSession.ctor += StoryGameSession_ctor; //Smth about limiting Karma
-            IL.World.SpawnGhost += World_SpawnGhost; //Ghost Encountering Mechanic hook
+            //IL.World.SpawnGhost += World_SpawnGhost; //Ghost Encountering Mechanic hook
 
             orig(game, manager);
             On.RainWorldGame.ctor -= AddILHooks; //Seems fine to only ever run this once
         }
 
 
-
-        private static void SaintAscendMurder(ILContext il)
+        public static void SaintAscendMurder(ILContext il)
         {
             ILCursor c = new(il);
             if (c.TryGotoNext(MoveType.Before,
@@ -194,48 +343,28 @@ namespace ExpeditionExtraConfig
             ))
             {
                 //c.Index -= 1;
-
                 c.Emit(OpCodes.Ldarg_0);
                 c.EmitDelegate<Func<PhysicalObject, Player, PhysicalObject>>((creature, player) =>
                 {
-                    if (creature is Creature && !(creature as Creature).dead)
+                    if (Custom.rainWorld.ExpeditionMode)
                     {
-                        if (Custom.rainWorld.ExpeditionMode)
+                        if (creature is Creature && !(creature as Creature).dead)
                         {
                             player.SessionRecord.AddKill((creature as Creature));
                         }
                     }
                     return creature;
                 });
-                Debug.Log("aaa: Saint Murder Points Success"); //could be improved
+                Debug.Log("ExpeditionExtraConfig: Saint Murder Points Success"); //could be improved
             }
             else
             {
-                Debug.Log("aaa: Saint Murder Points Fail");
+                Debug.Log("ExpeditionExtraConfig: Saint Murder Points Fail");
             }
         }
 
-        private static void World_SpawnGhost(ILContext il)
-        {
-            ILCursor c = new(il);
-            if (c.TryGotoNext(MoveType.Before,
-            x => x.MatchLdsfld("ModManager", "Expedition"),
-            x => x.MatchBrfalse(out _),
-            x => x.MatchLdsfld("ModManager", "Expedition")
-            )) 
-            { 
-                Debug.Log(c);
-                c.RemoveRange(9);
-                Debug.Log(c);
-                Debug.Log("aaa: Ghost Encounter IL Success");
-            }
-            else
-            {
-                Debug.Log("aaa: Ghost Encounter IL Failed");
-            }
-        }
 
-        private static void GhostEncounterScreen_GetDataFromGame(ILContext il)
+        public static void GhostEncounterScreen_GetDataFromGame(ILContext il)
         {
             ILCursor c = new(il);
             c.TryGotoNext(MoveType.Before,
@@ -245,19 +374,17 @@ namespace ExpeditionExtraConfig
             x => x.MatchLdflda("Menu.KarmaLadderScreen/SleepDeathScreenDataPackage", "karma")))
             {
                 c.Index -= 1;
-                Debug.Log(c);
                 c.RemoveRange(8);
-                Debug.Log(c);
-                Debug.Log("aaa: GhostEncounterScreen IL Success");
+                Debug.Log("ExpeditionExtraConfig: GhostEncounterScreen IL Success");
             }
             else
             {
-                Debug.Log("aaa: GhostEncounterScreen IL Failed");
+                Debug.Log("ExpeditionExtraConfig: GhostEncounterScreen IL Failed");
             }
 
         }
 
-        private static void StoryGameSession_ctor(ILContext il)
+        public static void StoryGameSession_ctor(ILContext il)
         {
             ILCursor c = new(il);
             c.TryGotoNext(MoveType.Before,
@@ -267,47 +394,14 @@ namespace ExpeditionExtraConfig
             x => x.MatchLdfld("StoryGameSession", "saveState")))
             {
                 c.Index -= 1;
-                Debug.Log(c);
                 c.RemoveRange(16);
-                Debug.Log(c);
-                Debug.Log("aaa: StoryGameSession_ctor IL Success");
+                Debug.Log("ExpeditionExtraConfig: StoryGameSession_ctor IL Success");
             }
             else
             {
-                Debug.Log("aaa: StoryGameSession_ctorIL Failed");
+                Debug.Log("ExpeditionExtraConfig: StoryGameSession_ctorIL Failed");
             }
         }
-
-
-        private static void RivuletShelterFailure(ILContext il)
-        {
-            ILCursor c = new(il);
-            c.TryGotoNext(MoveType.Before,
-            x => x.MatchLdfld("MiscWorldSaveData", "pebblesEnergyTaken"));
-            if (c.TryGotoNext(MoveType.Before,
-                x => x.MatchLdfld("DeathPersistentSaveData", "altEnding")))
-            {
-                c.Index += 1;
-                c.Emit(OpCodes.Ldarg_0);
-                c.EmitDelegate<Func<bool, RainCycle, bool>>((Check, self) =>
-                {
-                    if (self.world.game.rainWorld.ExpeditionMode)
-                    {
-                        return true;
-                    }
-                    else
-                    {
-                        return self.world.game.GetStorySession.saveState.deathPersistentSaveData.altEnding;
-                    }
-                });
-                Debug.Log("aaa: Rivulet PreCycleChance Hook Success");
-            }
-            else
-            {
-                Debug.Log("aaa: Rivulet PreCycleChance Hook Failed");
-            }
-        }
-
 
         public static void EnableNaturalKarmaFlower(ILContext il)
         {
@@ -319,44 +413,61 @@ namespace ExpeditionExtraConfig
                 x => x.MatchLdsfld("ModManager", "Expedition"));
                 c.Index += 1;
                 c.Next.OpCode = OpCodes.Brtrue_S;
-                Debug.Log("aaa: Karma Flower Hook Succeeded");
+                Debug.Log("ExpeditionExtraConfig: Karma Flower Hook Succeeded");
             }
             else
             {
-                Debug.Log("aaa: Karma Flower Hook Failed");
+                Debug.Log("ExpeditionExtraConfig: Karma Flower Hook Failed");
             }
         }
 
-        private int ExpeditionGame_GetRegionWeight(On.Expedition.ExpeditionGame.orig_GetRegionWeight orig, string region)
+        public int ExpeditionGame_GetRegionWeight(On.Expedition.ExpeditionGame.orig_GetRegionWeight orig, string region)
         {
-            if (region == "GW" && ExpeditionData.slugcatPlayer == MoreSlugcatsEnums.SlugcatStatsName.Spear)
+            if (region == "GW" && (ExpeditionData.slugcatPlayer == MoreSlugcatsEnums.SlugcatStatsName.Artificer || ExpeditionData.slugcatPlayer == MoreSlugcatsEnums.SlugcatStatsName.Spear))
             {
-                return 6;
+                return 5;
             }
             return orig(region);
         }
 
-        private int PearlDeliveryChallenge_RegionPoints(On.Expedition.PearlDeliveryChallenge.orig_RegionPoints orig, PearlDeliveryChallenge self)
+        public bool AchievementChallenge_ValidForThisSlugcat(On.Expedition.AchievementChallenge.orig_ValidForThisSlugcat orig, Expedition.AchievementChallenge self, SlugcatStats.Name slugcat)
         {
-            if (self.region == "MS")
-            {
-                return 35;
-            }
-            return orig(self);
-        }
-
-        private bool AchievementChallenge_ValidForThisSlugcat(On.Expedition.AchievementChallenge.orig_ValidForThisSlugcat orig, Expedition.AchievementChallenge self, SlugcatStats.Name slugcat)
-        {
-            if (((ModManager.MSC && slugcat == MoreSlugcatsEnums.SlugcatStatsName.Saint) || (!ModManager.MSC && slugcat == SlugcatStats.Name.Yellow)) && self.ID == WinState.EndgameID.Scholar)
-            {
-                return false;
-            }
-            else if (ModManager.MSC && slugcat == MoreSlugcatsEnums.SlugcatStatsName.Saint && self.ID == WinState.EndgameID.Hunter)
+            if ((ModManager.MSC && slugcat == MoreSlugcatsEnums.SlugcatStatsName.Saint) || (!ModManager.MSC && slugcat == SlugcatStats.Name.Yellow && self.ID == WinState.EndgameID.Scholar))
             {
                 return false;
             }
             return orig(self, slugcat);
         }
 
+
+        public void AddConfigHook(On.RainWorld.orig_OnModsInit orig, RainWorld self)
+        {
+            orig(self);
+            Debug.Log("ExpeditionExtraConfig: Wolfo Mod Loaded");
+            MachineConnector.SetRegisteredOI("ExpeditionExtraConfig", EECSettings.instance);
+
+            //OnHooks(); //Why would doing this here make it work better
+        }
+
+        public static void ArtificerGateWrongSymbol(ILContext il)
+        {
+            ILCursor c = new(il);
+            c.TryGotoNext(MoveType.Before,
+            x => x.MatchLdsfld("ModManager", "Expedition"));
+
+            if (c.TryGotoNext(MoveType.Before,
+            x => x.MatchLdsfld("RegionGate/GateRequirement", "OneKarma"),
+            x => x.MatchStfld("GateKarmaGlyph", "requirement")
+            ))
+            {
+                c.Index -= 1;
+                c.RemoveRange(4);
+                Debug.Log("ExpeditionExtraConfig: Karma Gate IL Success");
+            }
+            else
+            {
+                Debug.Log("ExpeditionExtraConfig: Karma Gate IL Failed");
+            }
+        }
     }
 }
