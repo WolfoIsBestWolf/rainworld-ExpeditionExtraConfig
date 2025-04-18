@@ -11,7 +11,6 @@ using RWCustom;
 using System.Web.UI.WebControls;
 using MonoMod.RuntimeDetour;
 using System.Reflection;
-using static UnityEngine.UI.Image;
 
 namespace ExpeditionExtraConfig
 {

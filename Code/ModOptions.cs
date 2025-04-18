@@ -2,22 +2,101 @@
 using Menu.Remix;
 using Menu.Remix.MixedUI;
 using MoreSlugcats;
+using PlayEveryWare.EpicOnlineServices;
 using RWCustom;
 using System;
 using UnityEngine;
+using System.Collections.Generic;
 
 namespace ExpeditionExtraConfig
 {
+    public class VanillaPreset<T>
+    {
+        public VanillaPreset(Configurable<T> config, T vanillaValue, T remixValue)
+        {
+            this.config = config;
+            this.vanillaValue = vanillaValue;
+        }
+        public Configurable<T> config;
+        public T remixValue;
+        public T vanillaValue;
+    }
+
     public class WConfig : OptionInterface
     {
 
 		public static WConfig instance = new WConfig();
 
-        /*public static Configurable<bool> cfgPassageTeleportation = instance.config.Bind("cfgPassageTeleportation", false, 
-        new ConfigurableInfo("Allow completed passages to be used as teleports. In Expedition an unlock, where you get teleports for challenges, is a inteded replacement.", null, "", new object[]
+
+        public static Configurable<bool> cfgScoreAdjustments = instance.config.Bind("cfgScoreAdjustments", false,
+           new ConfigurableInfo("Pearl & Item hoarding will reward extra points if asking to hoard a lot. Some enemies reward slighty more points.", null, "", new object[]
+           {
+                    "Score Adjustments"
+           }));
+
+        public static Configurable<bool> cfgShowVistaOnMap = instance.config.Bind("cfgShowVistaOnMap", true,
+           new ConfigurableInfo("Shows Vista Points on the map, regardless of if you've been to that room. To help with some of the guess work or looking it up", null, "", new object[]
+           {
+                "Vista Points on map"
+           }));
+ 
+        public static Configurable<bool> cfgSaint_NoSpear = instance.config.Bind("cfgSaint_NoSpear", false,
+           new ConfigurableInfo("Remove Saints ability to throw a spear to match his Campagin.\nSpear Pinning will be unavailable. Combat challenges will be rendered basically impossible.", null, "", new object[]
+           {
+                    "No Spear throwing"
+           }));
+        public static Configurable<bool> cfgSaint_NoCombat = instance.config.Bind("cfgSaint_NoCombat", false,
+           new ConfigurableInfo("Combat challenges will not appear as Saint. Cycle Score, Global Score, Hunting and some passages. ", null, "", new object[]
+           {
+                    "No Combat challenges"
+           })); 
+        public static Configurable<bool> cfgVista_Waterfront = instance.config.Bind("cfgVista_Waterfront", true,
+           new ConfigurableInfo("Add Vista points for Waterfront Facility. For Spearmaster and Artificer timeline.\nLocated in : LM_TOWER04, LM_B01, LM_C04", null, "", new object[]
+           {
+                    "Vistas - Waterfront"
+           }));
+        public static Configurable<bool> cfgVista_Submerged = instance.config.Bind("cfgVista_Submerged", false,
+           new ConfigurableInfo("Add Vista points for Submerged Superstructer. For Rivulet.\nLocated in : ", null, "", new object[]
+           {
+                    "Vistas - Submerged"
+           }));
+        public static Configurable<bool> cfgVista_SS = instance.config.Bind("cfgVista_SS", false,
+           new ConfigurableInfo("Add Vista points for Five Pebbles. For Rivulet.\nLocated in : ", null, "", new object[]
+           {
+                    "Vistas - Five Pebbles"
+           }));
+
+        public static Configurable<int> cfg_HuntChallengeLimit = instance.config.Bind("cfg_HuntChallengeLimit", 15,
+           new ConfigurableInfo("Hunting challenges never ask for more than this many kills. Vanilla is 15.\nSet lower if you dont want kill 15 Green Lizards or King Vultures to be options.", new ConfigAcceptableRange<int>(3, 15), "", new object[]
+           {
+                    "Hunting Limit"
+           }));
+
+
+        public static Configurable<int> cfg_HuntChallengeLimitRed = instance.config.Bind("cfg_HuntChallengeLimitRed", 12,
+        new ConfigurableInfo("Hunts targeting high scoring targets will never ask for more than this many kills. To avoid dragged out Expeditions due to creature rarity or personal preference.\nRed Lizard, Blizzard Lizard, Red Centipede, Vulture, King Vulture, Miros Vulture, Miros Bird, Elite Scav, Inspector.", new ConfigAcceptableRange<int>(1, 15), "", new object[]
+               {
+                "Hunting Limit - Dangerous"
+               }));
+        public static Configurable<int> cfg_HuntChallengeLimitRot = instance.config.Bind("cfg_HuntChallengeLimitRot", 4,
+           new ConfigurableInfo("Hunts targetting Brother & Daddy Long Legs will never ask for more than this many kills.\nDue to limited ways to kill them, requiring 8+ kills may be overly frustrating.", new ConfigAcceptableRange<int>(1, 15), "", new object[]
+           {
+                "Hunting Limit - Rot"
+           }));
+     
+
+
+        public static Configurable<bool> cfgCustomColorMenu = instance.config.Bind<bool>("cfgCustomColorMenu", true,
+            new ConfigurableInfo("Adds the custom slugcat color menu from Remix to the Expedition character select screen.\nOnly if Jolly Co-op is disabled (that has it's own).", null, "", new object[]
             {
-                "Passage Teleportation"
-            }));*/
+                        "Custom Color menu for Expedition"
+            }));
+
+        public static Configurable<bool> cfgPassageTeleportation = instance.config.Bind("cfgPassageTeleportation", false, 
+        new ConfigurableInfo("Completed passages will grant teleportation tokens. Will work even without activating the perk. \nCompleting challenges with the 'Enable Passages' perk will still grant passages, so it still has value.", null, "", new object[]
+            {
+                "Passage Teleports"
+            }));
         public static Configurable<bool> cfgKarmaFlower = instance.config.Bind("cfgKarmaFlower", false, 
             new ConfigurableInfo("Allow natural Karma Flowers to spawn during Expedition. Hunter still can not find them", null, "", new object[]
 			{
@@ -39,7 +118,7 @@ namespace ExpeditionExtraConfig
 			{
 				"Starting Karma"
 			}));
-		public static Configurable<int> cfgKarmaCapStart = instance.config.Bind("cfgKarmaCapStart", 5, 
+		public static Configurable<int> cfgKarmaStartMax = instance.config.Bind("cfgKarmaStartMax", 5, 
             new ConfigurableInfo("Change starting Max Karma. Vanilla is 5.", new ConfigAcceptableRange<int>(1, 10), "", new object[]
 			{
 				"Starting Max Karma"
@@ -50,10 +129,15 @@ namespace ExpeditionExtraConfig
             {
                 "Remove Perma Death"
             }));
-        public static Configurable<bool> cfgUnlockAll = instance.config.Bind("cfgUnlockAll", false, 
-            new ConfigurableInfo("Makes things not require unlocks. Intended for testing. Does not actually add unlock progress or achievements", null, "", new object[]
+        public static Configurable<bool> cfgUnlockAll = instance.config.Bind("cfgUnlockAll", false,
+            new ConfigurableInfo("Makes things not require unlocks. Intended for testing. Does not add unlock progress or achievements", null, "", new object[]
             {
-                "Unlock Everything"
+                "Unlock everything else"
+            }));
+        public static Configurable<bool> cfgInfinitePassage = instance.config.Bind("cfgInfinitePassage", false,
+            new ConfigurableInfo("Infinite passage teleports. Does not require perk. Intended for testing.", null, "", new object[]
+            {
+                "Infinite Passages"
             }));
         /*public static Configurable<bool> cfgScoreDisplay = instance.config.Bind("cfgScoreDisplay", true, 
             new ConfigurableInfo("Displays Points, on the challenge menu. This is a bug fix. Disable it if they fix it officially I guess.", null, "", new object[]
@@ -61,12 +145,31 @@ namespace ExpeditionExtraConfig
                 "Score on challenge Menu"
            }));*/
 
+
         public static Configurable<bool> cfgSpearOverseer = instance.config.Bind("cfgSpearOverseer", true, 
             new ConfigurableInfo("Spearmaster will be followed by his Red Overseer. This should have no gameplay effect.", null, "", new object[]
 			{
 				"Spearmaster Overseer"
 			}));
 
+        public static Configurable<bool> cfgUnlockJukebox = instance.config.Bind("cfgUnlockJukebox", false,
+            new ConfigurableInfo("Music tracks in the Jukebox no longer require to be unlocked.", null, "", new object[]
+            {
+                "Unlock all tracks"
+            }));
+        public static Configurable<bool> cfgJukeboxAdditions = instance.config.Bind("cfgJukeboxAdditions", true,
+            new ConfigurableInfo("Adds a Autoplay button so tracks play one after another. You can go from the first to the last page and vice versa.", null, "", new object[]
+            {
+                "Jukebox Additions"
+            }));
+
+        public static Configurable<bool> cfgRemoveRoboLock = instance.config.Bind("cfgRemoveRoboLock", true,
+           new ConfigurableInfo("Allows everyone to access Metropolis or Submerged Superstructure from the top. Like in Artificer Expeditions, it is replace it with a 1 Karma Gate.", null, "", new object[]
+           {
+                "Remove ID Drone Gates"
+           }));
+
+ 
         #region Rivulet
         public static Configurable<bool> cfgRivuletBall = instance.config.Bind("cfgRivuletBall", false,
             new ConfigurableInfo("Rivulet starts with the Rarefaction Cell. Not all too useful but funny.", null, "", new object[]
@@ -75,7 +178,7 @@ namespace ExpeditionExtraConfig
             }));
 
         public static Configurable<bool> cfgRivuletShortCycles = instance.config.Bind("cfgRivuletShortCycles", true, 
-            new ConfigurableInfo("Shorter Cycles and more Shelter Failures like the start of Rivulets campaign. To make his expeditions feel more different. Cycle Point challenges will require less points.", null, "", new object[]
+            new ConfigurableInfo("Shorter Cycles and more Shelter Failures. To make his expeditions feel more like his campaign.  Cycle Point challenges will require less points.", null, "", new object[]
 			{
 				"Rivulet Shorter Cycles" 
 			}));
@@ -86,8 +189,8 @@ namespace ExpeditionExtraConfig
                 "Strong Rain Duration"
           }));*/
 
-        public static Configurable<int> cfgRiv_HeavyRainChance = instance.config.Bind("cfgRiv_HeavyRainChance", 30,
-           new ConfigurableInfo("Chance for a cycle to randomly be shorter and have likelier shelter failure. It will not get rerolled by dying.", new ConfigAcceptableRange<int>(16, 100), "", new object[]
+        public static Configurable<int> cfgRiv_HeavyRainChance = instance.config.Bind("cfgRiv_HeavyRainChance", 22,
+           new ConfigurableInfo("Chance for above config on any given cycle. Sooner rain and likelier shelter failure. It will not get rerolled by dying.", new ConfigAcceptableRange<int>(5, 100), "", new object[]
            {
                 "Strong Rain Chance"
            }));
@@ -113,7 +216,7 @@ namespace ExpeditionExtraConfig
 				"Shelter Fail rates"
 			}));*/
         public static Configurable<bool> cfgRiv_ShortCyclePointBonus = instance.config.Bind("cfgRiv_ShortCyclePointBonus", true,
-            new ConfigurableInfo("Rivulet gets 1.1x score on challenges that involve long travel. To make up for some cycles being shorter.", null, "", new object[]
+            new ConfigurableInfo("Rivulet gets 1.1x score on challenges that involve long travel. To make up for some cycles being shorter.\nOnly active if short cycles enabled.", null, "", new object[]
         {
                 "Travel Bonus Score"
         }));
@@ -122,35 +225,36 @@ namespace ExpeditionExtraConfig
 
         #region Saint
         public static Configurable<bool> cfgSaint_AscendKill = instance.config.Bind("cfgSaint_AscendKill", true,
-         new ConfigurableInfo("Ascending usually does not count as murder, and would be rather meanginless for challenges.", null, "", new object[]
+         new ConfigurableInfo("Ascending usually does not count as kills for challenges.", null, "", new object[]
          {
                 "Ascend Kills"
          }));
 
-        public static Configurable<float> cfgSaintAscendPointPenalty = instance.config.Bind("cfgSaintAscendPointPenalty", 1f, new ConfigurableInfo("Saint gets 1.35x score multiplier for combat challenges. This multiplier will be used instead if you Ascended creatures as it's easier. (Only applies when run is finished with 10 max Karma)", new ConfigAcceptableRange<float>(0.2f, 1.35f), "", new object[]
+        public static Configurable<float> cfgSaintAscendPointPenalty = instance.config.Bind("cfgSaintAscendPointPenalty", 1f, 
+            new ConfigurableInfo("Saint gets 1.35x score multiplier for combat challenges. This multiplier will be used instead if you Ascended creatures as it's easier. (Only applies when run is finished with 10 max Karma and above config enabled.)", new ConfigAcceptableRange<float>(0.2f, 1.35f), "", new object[]
         {
                 "Ascension Point penalty"
         }));
 
         public static Configurable<bool> cfgSaint_Echoes = instance.config.Bind("cfgSaint_Echoes", true, 
-			new ConfigurableInfo("Allow Saint to encounter Echos regardless of Karma and without previous visits like in the normal game. Can't visit Echos on cycle 0.", null, "", new object[]
+			new ConfigurableInfo("Allow Saint to encounter Echos regardless of Karma and without previous visits like in his Campaign. Still can't visit Echos on cycle 0.", null, "", new object[]
 			{
 				"Saint Echo mechanics"
 			}));
         public static Configurable<bool> cfgSaintSubmergedEcho = instance.config.Bind("cfgSaintSubmergedEcho", false, 
-            new ConfigurableInfo("Allow Echo encounters to choose the Submerged Superstructure Echo for Saint", null, "", new object[]
+            new ConfigurableInfo("Allow Submerged Superstructure Echo for Echo Challenges as Saint. This will be tremendously difficult if ID gates are not disabled.", null, "", new object[]
         {
                 "Submerged Superstructure Echo"
         }));
 
         public static Configurable<bool> cfgSaint_MaxKarmaBool = instance.config.Bind("cfgSaint_MaxKarmaBool", false,
-           new ConfigurableInfo("Should Saint start with less Karma in Expedition mode", null, "", new object[]
+           new ConfigurableInfo("Should Saint start with a different max Karma amount in Expedition mode", null, "", new object[]
            {
                 "Different Max Karma"
            }));
 
         public static Configurable<int> cfgSaint_MaxKarma = instance.config.Bind("cfgSaint_MaxKarma", 6,
-           new ConfigurableInfo("Saint starting max Karma amount for above config. This can make it easier to reach Karma 10 with Echoes if that is enabled.", new ConfigAcceptableRange<int>(1, 10), "", new object[]
+           new ConfigurableInfo("Starting max Karma amount for above config. This can make it easier to reach Karma 10 with Echoes if that is enabled.", new ConfigAcceptableRange<int>(1, 10), "", new object[]
            {
                 "Starting Max Karma"
            }));
@@ -169,10 +273,10 @@ namespace ExpeditionExtraConfig
 
  
 
-		public static Configurable<bool> cfgHiddenDelveries = instance.config.Bind("cfgHiddenDelveries", false, 
-            new ConfigurableInfo("Allow Pearl Deliveries, Pearl Hoarding, Neuron Delvieries to be chosen for Hidden challenges again. It'll only chose low difficulty amounts if hidden.",null, "", new object[]
+		public static Configurable<bool> cfgHiddenDeliveries = instance.config.Bind("cfgHiddenDeliveries", false, 
+            new ConfigurableInfo("Allow Pearl Delivery, Pearl Hoarding & Neuron Gifting to be chosen as Hidden challenges again.\nThis was removed in a patch. Hidden gives 2x points as usual.", null, "", new object[]
 			{
-				"Hidden Deliviers"
+				"Hidden Deliveries"
 			}));
 
         public static Configurable<bool> cfgPauseWarning = instance.config.Bind<bool>("cfgPauseWarning", false, 
@@ -187,13 +291,18 @@ namespace ExpeditionExtraConfig
             }));
 
 
+        public static Configurable<bool> cfgTestingMission = instance.config.Bind("cfgTestingMission", false,
+   new ConfigurableInfo("", null, "", new object[]
+   {
+                "Developer Info"
+   }));
 
 
         //public static Configurable<bool> cfgPassageTeleports; //Apparently vanill as an unlock
         public static Configurable<float> cfgMapRevealRadius = instance.config.Bind("cfgMapRevealRadius", 2f,
-           new ConfigurableInfo("Map Reveal Radius multiplier during Expedition. To more easily fill out the map in Expedition so you can focus more on your objectives. Also because I cant figure out how to transfer map progress.", new ConfigAcceptableRange<float>(1f, 50f), "", new object[]
+           new ConfigurableInfo("Map Reveal Radius multiplier during Expedition. To more easily fill out the map in Expedition so you can focus more on your objectives. Also because I cant figure out how to transfer map progress.", new ConfigAcceptableRange<float>(1f, 20f), "", new object[]
            {
-                "Map Reveal Radius multiplier"
+                "Expedition Map Reveal mult"
            }));
 
         //Pups and allow Mother
@@ -210,12 +319,12 @@ namespace ExpeditionExtraConfig
                 "Slugpups non default characters"
             }));
         public static Configurable<bool> cfgPupsSpawnFrequently = instance.config.Bind("cfgPupsSpawnFrequently", true,
-            new ConfigurableInfo("During Expeditions, guarantee a Slugpup every 10 cycles instead of every 25. For Hunter it is 5 Cycles regardless of config.", null, "", new object[]
+            new ConfigurableInfo("During Expeditions, guarantee a Slugpup every 10 cycles instead of every 25. For Hunter it is 5 Cycles regardless. To help with RNG for Mother Passage", null, "", new object[]
             {
                 "Frequent Slugpups"
             }));
-        public static Configurable<bool> cfgPupsMotherAchievement = instance.config.Bind("cfgPupsMotherAchievement", false,
-            new ConfigurableInfo("Allow Mother Passage as a possible Objective. This is disabled in vanilla because of no Slugpups. The randomness of Pups may make this annoying rather than challenge.", null, "", new object[]
+        public static Configurable<bool> cfgPupsMotherAchievement = instance.config.Bind("cfgPupsMotherAchievement", true,
+            new ConfigurableInfo("Allow Mother Passage as a possible objective. If Slugpups are enabled.\nThis is disabled in vanilla because of no Slugpups.", null, "", new object[]
             {
                 "Mother Passage"
             }));
@@ -251,15 +360,20 @@ namespace ExpeditionExtraConfig
                 "Artificer Drone"
            }));
         public static Configurable<bool> cfgArti_MaxKarmaBool = instance.config.Bind("cfgArti_MaxKarmaBool", false,
-           new ConfigurableInfo("Should Artificer start with less Karma in Expedition mode", null, "", new object[]
+           new ConfigurableInfo("Should Artificer start with a different max Karma amount in Expedition mode", null, "", new object[]
            {
                 "Different Max Karma"
            }));
 
         public static Configurable<int> cfgArti_MaxKarma = instance.config.Bind("cfgArti_MaxKarma", 4,
-           new ConfigurableInfo("Artificer starting Max Karma amount for above config. This can force her to use Scav Corpses to go through some gates.", new ConfigAcceptableRange<int>(1, 10), "", new object[]
+           new ConfigurableInfo("Starting Max Karma amount for above config. This can force her to use Scav Corpses to go through some gates.", new ConfigAcceptableRange<int>(1, 10), "", new object[]
            {
                 "Starting Max Karma"
+           }));
+        public static Configurable<bool> cfgArti_LungUp = instance.config.Bind("cfgArti_LungUp", true,
+            new ConfigurableInfo("Increase Artificers lung capacity like in Jolly Co-op.", null, "", new object[]
+           {
+                ""
            }));
         #endregion
         //public static Configurable<bool> cfgArti_ScavKing;
@@ -273,29 +387,30 @@ namespace ExpeditionExtraConfig
                 "Monk Combat Bonus Score"
            }));
 
-   
 
- 
 
- 
 
-		public override void Initialize()
+
+
+        private OpHoldButton classicPresetBtn;
+        public override void Initialize()
 		{
 			base.Initialize();
 			this.Tabs = new OpTab[]
 			{
                 new OpTab(this, "General"),
-				new OpTab(this, "Character")
+                new OpTab(this, "Character"),
+                new OpTab(this, "Cheats"),
             };
 			this.AddCheckbox();
-
-
+            VanillaValues();
             cfgUnlockAll.OnChange += CfgUnlockAll_OnChange;
-            CfgUnlockAll_OnChange();
+            
         }
 
-        private void CfgUnlockAll_OnChange()
+        public static void CfgUnlockAll_OnChange()
         {
+            Debug.Log(cfgUnlockAll.Value);
             if (cfgUnlockAll.Value && UnlockAll.added == false)
             {
                 UnlockAll.Add();
@@ -306,18 +421,126 @@ namespace ExpeditionExtraConfig
             }
         }
 
+
+        public void VanillaPreset(UIfocusable trigger)
+        {
+            for (int i = 0; i < boolPresets.Count; i++)
+            {
+                if (boolPresets[i].config.BoundUIconfig != null)
+                {
+                   boolPresets[i].config.BoundUIconfig.value = ValueConverter.ConvertToString<bool>(boolPresets[i].vanillaValue);
+                }
+            }
+            for (int j = 0; j < intPresets.Count; j++)
+            {
+                if (intPresets[j].config.BoundUIconfig != null)
+                {
+                    intPresets[j].config.BoundUIconfig.value = ValueConverter.ConvertToString<int>(intPresets[j].vanillaValue);
+                }
+            }
+            for (int k = 0; k < floatPresets.Count; k++)
+            {
+                if (floatPresets[k].config.BoundUIconfig != null)
+                {
+                    floatPresets[k].config.BoundUIconfig.value = ValueConverter.ConvertToString<float>(floatPresets[k].vanillaValue);
+                }
+            }
+        }
+        public static List<VanillaPreset<bool>> boolPresets;
+        public static List<VanillaPreset<int>> intPresets;
+        public static List<VanillaPreset<float>> floatPresets;
+
+        public static void VanillaValues()
+        {
+            intPresets = new List<VanillaPreset<int>>()
+            {
+                new VanillaPreset<int>(cfgKarmaStart, 2, 15),
+                new VanillaPreset<int>(cfgKarmaStartMax, 5, 15),
+                new VanillaPreset<int>(cfg_HuntChallengeLimit, 15, 15),
+                new VanillaPreset<int>(cfg_HuntChallengeLimitRot, 15, 4),
+                new VanillaPreset<int>(cfg_HuntChallengeLimitRed, 15, 12),
+                new VanillaPreset<int>(cfgHunterPlusKarma, 0, 2),
+                new VanillaPreset<int>(cfgArti_MaxKarma, 5, 4),
+                new VanillaPreset<int>(cfgSaint_MaxKarma, 5, 6),
+                new VanillaPreset<int>(cfgRiv_HeavyRainChance, 100, 22),
+                new VanillaPreset<int>(cfgRiv_ShelterFailRate, 20, 30),
+ 
+            };
+            floatPresets = new List<VanillaPreset<float>>()
+            {
+                new VanillaPreset<float>(cfgMapRevealRadius, 1f, 2f),
+                new VanillaPreset<float>(cfgRiv_RainMult, 0.33f, 2f),
+                new VanillaPreset<float>(cfgSaintAscendPointPenalty, 1.35f, 1.2f),
+            };
+            boolPresets = new List<VanillaPreset<bool>>()
+            {
+                new VanillaPreset<bool>(cfgMaxKarmaEchos, false, true),
+                new VanillaPreset<bool>(cfgMaxKarmaPebbles, false, true),
+                new VanillaPreset<bool>(cfgMonk_CombatScore, false, true),
+                new VanillaPreset<bool>(cfgPupsMotherAchievement, false, true),
+                new VanillaPreset<bool>(cfgHiddenDeliveries, false, true),
+                new VanillaPreset<bool>(cfgShowVistaOnMap, false, true),
+                new VanillaPreset<bool>(cfgRemoveRoboLock, false, true),
+                new VanillaPreset<bool>(cfgPassageTeleportation, false, true),
+
+                new VanillaPreset<bool>(cfgPupsSpawn, false, true),
+                new VanillaPreset<bool>(cfgPupsSpawnNonDefault, false, true),
+                new VanillaPreset<bool>(cfgPupsSpawnFrequently, false, true),
+                new VanillaPreset<bool>(cfgMonk_CombatScore, false, true),
+                new VanillaPreset<bool>(cfgMonk_StartWithPups, false, true),
+                new VanillaPreset<bool>(cfgGourmand_StartWithPups, false, true),
+                new VanillaPreset<bool>(cfgStomachPearl, false, true),
+                new VanillaPreset<bool>(cfgArti_MaxKarmaBool, false, true),
+                new VanillaPreset<bool>(cfgRivuletBall, false, true),
+                new VanillaPreset<bool>(cfgRivuletShortCycles, false, true),
+                new VanillaPreset<bool>(cfgRiv_ShortCyclePointBonus, false, true),
+                new VanillaPreset<bool>(cfgSaint_Echoes, false, true),
+                new VanillaPreset<bool>(cfgSaint_AscendKill, false, true),
+                new VanillaPreset<bool>(cfgSaint_MaxKarmaBool, false, true),
+                new VanillaPreset<bool>(cfgSaintSubmergedEcho, false, true),
+                new VanillaPreset<bool>(cfgSaint_NoSpear, false, true),
+                new VanillaPreset<bool>(cfgVista_Submerged, false, true),
+                new VanillaPreset<bool>(cfgVista_Waterfront, false, true),
+
+                new VanillaPreset<bool>(cfgInfinitePassage, false, true),
+                new VanillaPreset<bool>(cfgRemovePermaDeath, false, true),
+                new VanillaPreset<bool>(cfgUnlockAll, false, true),
+                //new VanillaPreset<bool>(cfgUnlockJukebox, false, true),
+
+            };
+        }
+
+
         private void PopulateWithConfigs(int tabIndex, ConfigurableBase[][] lists, [CanBeNull] string[] names, [CanBeNull] Color[] colors, int splitAfter)
         {
             new OpLabel(new Vector2(100f, 560f), new Vector2(400f, 30f), this.Tabs[tabIndex].name, FLabelAlignment.Center, true, null);
             OpTab opTab = this.Tabs[tabIndex];
             float num = 40f;
-            float num2 = 20f;
+            float num2 = tabIndex == 3 ? 160f : 20f;
             float num3 = tabIndex == 1 ? 540f : 500f;
             UIconfig uiconfig = null;
             for (int i = 0; i < lists.Length; i++)
-            {
-				if (names != null)
-				{
+            {   
+                /*if (i == 1 && tabIndex == 1)
+                {
+                    num3 -= 36f;
+                }*/
+                if (i == splitAfter)
+                {
+                    num2 += 300f;
+                    num3 = tabIndex == 1 ? 540f : 500f;
+                    num = 40f;
+                    //uiconfig = null;
+                }
+                else if (names != null && names[i] == "")
+                {
+                    if (names[i] == "")
+                    {
+                        num3 += 70f;
+                    }
+                }
+                if (!(names == null || names[i] == ""))
+                {
                     var label = new OpLabel(new Vector2(num2, num3 - num + 10f), new Vector2(260f, 30f), "~ " + names[i] + " ~", FLabelAlignment.Center, true, null);
                     if (colors != null)
                     {
@@ -339,6 +562,7 @@ namespace ExpeditionExtraConfig
                 }
                 for (int j = 0; j < lists[i].Length; j++)
                 {
+                     
                     switch (ValueConverter.GetTypeCategory(lists[i][j].settingType))
                     {
                         case ValueConverter.TypeCategory.Boolean:
@@ -437,13 +661,7 @@ namespace ExpeditionExtraConfig
                 {
                     num3 -= 70f;
                 }
-                if (i == splitAfter)
-                {
-                    num2 += 300f;
-                    num3 = tabIndex == 1 ? 540f : 500f;
-                    num = 40f;
-                    uiconfig = null;
-                }
+               
             }
             for (int k = 0; k < lists.Length; k++)
             {
@@ -491,7 +709,7 @@ namespace ExpeditionExtraConfig
             var White = PlayerGraphics.DefaultSlugcatColor(SlugcatStats.Name.White);
             var Red = PlayerGraphics.DefaultSlugcatColor(SlugcatStats.Name.Red);
             var Yellow = PlayerGraphics.DefaultSlugcatColor(SlugcatStats.Name.Yellow);
-            var Watch = PlayerGraphics.DefaultSlugcatColor(SlugcatStats.Name.Night)*2.2f;
+            var Watcher = PlayerGraphics.DefaultSlugcatColor(SlugcatStats.Name.Night)*4f;
             Color cheatColor = new Color(0.85f, 0.35f, 0.4f);
 
             var Arti = PlayerGraphics.DefaultSlugcatColor(MoreSlugcatsEnums.SlugcatStatsName.Artificer) * 1.5f;
@@ -508,59 +726,66 @@ namespace ExpeditionExtraConfig
             //+2.5y for Labels +35x for Labels Checkboxes
             //half of SizeX for UpDowns
             //Xsize defined in UpDowns
- 
 
+            Tabs[2].colorCanvas = cheatColor;
+            Tabs[2].colorButton = cheatColor;
+
+
+            #region Main
             ConfigurableBase[][] array = new ConfigurableBase[4][];
             Color[] colors = new Color[]
              {
                 Menu.MenuColorEffect.rgbMediumGrey,
                 Menu.MenuColorEffect.rgbMediumGrey,
                 Menu.MenuColorEffect.rgbMediumGrey,
-                cheatColor,
+                 Menu.MenuColorEffect.rgbMediumGrey,
              };
             array[0] = new ConfigurableBase[]
             {
                 cfgKarmaStart,
-                cfgKarmaCapStart,
+                cfgKarmaStartMax,
                 cfgMaxKarmaEchos,
                 cfgMaxKarmaPebbles,
                 cfgKarmaFlower,
-               
+                cfgMapRevealRadius,
+                cfgPassageTeleportation,
+                cfgRemoveRoboLock,
             };
             array[1] = new ConfigurableBase[]
             {
+                cfgJukeboxAdditions,
+                cfgCustomColorMenu,
                 cfgMusicPlayMore,
                 cfgPauseWarning,
-                //cfgScoreDisplay,
-                //cfgColorMenu,
             };
             array[2] = new ConfigurableBase[]
             {
-                cfgHiddenDelveries,
-                cfgMapRevealRadius,
-                cfgPupsSpawn,
-                cfgPupsSpawnNonDefault,
-                cfgPupsSpawnFrequently,
                 cfgPupsMotherAchievement,
-                //cfgPassageTeleportation,
+                cfgHiddenDeliveries,
+                cfg_HuntChallengeLimit,
+                cfg_HuntChallengeLimitRed,
+                cfg_HuntChallengeLimitRot,
+                cfgShowVistaOnMap,
             };
             array[3] = new ConfigurableBase[]
             {
-                cfgRemovePermaDeath,
-                cfgUnlockAll
+                cfgPupsSpawn,
+                cfgPupsSpawnNonDefault,
+                cfgPupsSpawnFrequently,
             };
+
             string[] names = new string[]
              {
-                "Karma",
-                "Other",
+                "Assists",
                 "General",
-                "Cheats",   
+                "Challenges",
+                "Slugpups",   
              };
-			instance.PopulateWithConfigs(0, array, names, colors, 1);
-		 
 
 
-
+            instance.PopulateWithConfigs(0, array, names, colors, 2);
+            #endregion
+            #region Tab Character
             array = new ConfigurableBase[7][];
             colors = new Color[]
              {
@@ -572,6 +797,7 @@ namespace ExpeditionExtraConfig
 				Riv,
 				Saint,
              };
+
             array[0] = new ConfigurableBase[]
             {
                cfgMonk_CombatScore,
@@ -595,6 +821,7 @@ namespace ExpeditionExtraConfig
             array[4] = new ConfigurableBase[]
             {
                 cfgSpearOverseer,
+                cfgVista_Waterfront,
             };
             array[5] = new ConfigurableBase[]
            {
@@ -613,30 +840,61 @@ namespace ExpeditionExtraConfig
                 cfgSaintAscendPointPenalty,
                 cfgSaint_MaxKarmaBool,
                 cfgSaint_MaxKarma,
+                cfgSaintSubmergedEcho,
+                cfgSaint_NoSpear,
            };
-            instance.PopulateWithConfigs(1, array, null, colors, 4);
+ 
 
 
+            instance.PopulateWithConfigs(1, array, null, colors, 5);
+            #endregion
+
+            #region Main
+            array = new ConfigurableBase[2][];
+            colors = new Color[]
+             {
+                cheatColor,
+              cheatColor,
+             };
+            array[0] = new ConfigurableBase[]
+            {
+                cfgRemovePermaDeath,
+                cfgInfinitePassage,
+                cfgUnlockJukebox,
+                cfgUnlockAll
+            };
+            array[1] = new ConfigurableBase[]
+           {
+                cfgTestingMission,
+           };
+            names = new string[]
+             {
+                "Cheats",
+                " ",
+             };
+
+
+            instance.PopulateWithConfigs(2, array, names, colors, 1);
+            #endregion 
 
             OpLabel TitleLabel = new OpLabel(new Vector2(150f, 520), new Vector2(300f, 30f), "~Expedition Extra Config~", FLabelAlignment.Center, true, null);
             TitleLabel.description = "Various settings for Expedition Mode";
             TitleLabel.color = White;
 
-            /*OpLabel Title = new OpLabel(200, 560, "~Expedition Extra Config~", true) //300 true center I guess
-			{
-                description = "Various settings for Expedition Mode",
-                color = Gourmand
-            };*/
-			
+
+ 
+            this.classicPresetBtn = new OpHoldButton(new Vector2(472f, 0f), new Vector2(110f, 30f), "Set to Vanilla", 30f)
+            {
+                description = OptionInterface.Translate("Set all values to Vanilla values except for cosmetic settings.")
+            };
+            this.classicPresetBtn.OnPressDone += this.VanillaPreset;
 
             this.Tabs[0].AddItems(new UIelement[]
-            {
-                TitleLabel,
-            });
-
-            return;
-	 
-		}
+               {
+                    TitleLabel,
+                    this.classicPresetBtn,
+               });
+        }
 
 
 		 

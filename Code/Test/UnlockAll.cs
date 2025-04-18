@@ -39,7 +39,19 @@ namespace ExpeditionExtraConfig
             IL.Menu.UnlockDialog.SetUpBurdenDescriptions += NoNeedForUnlocks4;
 
             On.Menu.UnlockDialog.TogglePerk += UnlockDialog_TogglePerk;
+            On.Expedition.ExpeditionProgression.MissionAvailable += ExpeditionProgression_MissionAvailable;
+            On.Expedition.ExpeditionProgression.MissionRequirements += ExpeditionProgression_MissionRequirements;
         }
+
+        private static string ExpeditionProgression_MissionRequirements(On.Expedition.ExpeditionProgression.orig_MissionRequirements orig, string key)
+        {
+            if (WConfig.cfgUnlockAll.Value)
+            {
+                return "";
+            }
+            return orig(key);
+        }
+
         public static void Remove()
         {
             added = false;
@@ -65,6 +77,17 @@ namespace ExpeditionExtraConfig
             IL.Menu.UnlockDialog.SetUpBurdenDescriptions -= NoNeedForUnlocks4;
 
             On.Menu.UnlockDialog.TogglePerk -= UnlockDialog_TogglePerk;
+            On.Expedition.ExpeditionProgression.MissionAvailable -= ExpeditionProgression_MissionAvailable;
+            On.Expedition.ExpeditionProgression.MissionRequirements -= ExpeditionProgression_MissionRequirements;
+        }
+
+        private static bool ExpeditionProgression_MissionAvailable(On.Expedition.ExpeditionProgression.orig_MissionAvailable orig, string key)
+        {
+            if (WConfig.cfgUnlockAll.Value)
+            {
+                return true;
+            }
+            return orig(key);
         }
 
         private static void UnlockDialog_TogglePerk(On.Menu.UnlockDialog.orig_TogglePerk orig, Menu.UnlockDialog self, string message)

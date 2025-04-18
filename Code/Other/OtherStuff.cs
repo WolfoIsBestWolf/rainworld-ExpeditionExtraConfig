@@ -17,9 +17,6 @@ namespace ExpeditionExtraConfig
         {
             ILCursor c = new(il);
             if (c.TryGotoNext(MoveType.After,
-                //x => x.MatchStfld("Hud.TextPromt", "pausedWarningText"),
-                //x => x.MatchBr(out _),
-                //x => x.MatchLdarg(2),
                 x => x.MatchLdfld("RainWorldGame", "clock"),
                 x => x.MatchLdcI4(1200)))
             {
@@ -32,12 +29,43 @@ namespace ExpeditionExtraConfig
                     }
                     return karma;
                 });
-               UnityEngine.Debug.Log("ExpeditionConfig: Pause IL Hook Success");
+               Debug.Log("ExpeditionConfig: Pause IL Hook Success");
             }
             else
             {
-               UnityEngine.Debug.Log("ExpeditionConfig: Pause IL Hook Failed");
+               Debug.Log("ExpeditionConfig: Pause IL Hook Failed");
             }
+
+            if (c.TryGotoPrev(MoveType.After,
+                x => x.MatchLdfld("DeathPersistentSaveData", "karma")))
+            {
+                //c.Index += 1;
+                c.EmitDelegate<Func<int, int>>((karma) =>
+                {
+                    if (WConfig.cfgRemovePermaDeath.Value)
+                    {
+                        return 1;
+                    }
+                    return karma;
+                });
+                Debug.Log("cfgRemovePermaDeath no spooky message");
+            }
+            else
+            {
+                Debug.Log("cfgRemovePermaDeath no spooky message fail");
+            }
+        }
+
+        public static void BiggerMapExped(On.HUD.Map.orig_ctor orig, HUD.Map self, HUD.HUD hud, HUD.Map.MapData mapData)
+        {
+            orig(self, hud, mapData);
+            if (Custom.rainWorld.ExpeditionMode)
+            {
+                //UnityEngine.Debug.Log(self.DiscoverResolution);
+                self.DiscoverResolution = 7f * WConfig.cfgMapRevealRadius.Value;
+                //UnityEngine.Debug.Log(self.DiscoverResolution);
+            }
+
         }
 
         public static void AlwaysPlayMusic(On.Music.MusicPlayer.orig_GameRequestsSong orig, Music.MusicPlayer self, MusicEvent musicEvent)
@@ -46,6 +74,7 @@ namespace ExpeditionExtraConfig
             {
                 self.hasPlayedASongThisCycle = false;
                 musicEvent.cyclesRest = 0;
+          
             }     
             orig(self, musicEvent);
         }

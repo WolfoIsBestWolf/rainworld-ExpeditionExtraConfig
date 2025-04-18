@@ -39,10 +39,14 @@ namespace ExpeditionExtraConfig
             On.Expedition.NeuronDeliveryChallenge.Points += RivMorePoints_NeuronDeliver;
             #endregion
 
+            //Vista Challenge more points
+      
+          
         }
 
-      
+       
 
+     
         private static void DisableVanillaShortCycles(ILContext il)
         {
             ILCursor c = new(il);
