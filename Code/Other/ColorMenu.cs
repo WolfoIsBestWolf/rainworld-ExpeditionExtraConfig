@@ -8,12 +8,14 @@ using System.Globalization;
 using System.Collections.Generic;
 using RWCustom;
 using Expedition;
+using System.Linq;
  
 namespace ExpeditionExtraConfig
 {
     public class ColorMenu : CheckBox.IOwnCheckBox, Slider.ISliderOwner
     {
         public static ColorMenu instance;
+        public SymbolButton rainbowButton;
 
         public static void Start()
         {
@@ -28,7 +30,23 @@ namespace ExpeditionExtraConfig
             On.Menu.ChallengeSelectPage.StartButton_OnPressDone += AssignCustomColor_StartExpedition;
 
             On.Menu.ChallengeSelectPage.ctor += ChallengeSelectPage_ctor;
+            On.Menu.CharacterSelectPage.GrafUpdate += RainbowButton;
 
+        }
+
+        public float colorCounter;
+        private static void RainbowButton(On.Menu.CharacterSelectPage.orig_GrafUpdate orig, CharacterSelectPage self, float timeStacker)
+        {
+            orig(self,timeStacker);
+            if (instance != null && instance.rainbowButton != null)
+            {
+                instance.colorCounter += 0.1f;
+                int num = ExpeditionGame.ExIndex(ExpeditionData.slugcatPlayer);
+                if (num > -1)
+                {
+                    instance.rainbowButton.symbolSprite.color = (ExpeditionData.ints[num] > 1) ? new HSLColor(Mathf.Sin(instance.colorCounter / 20f), 1f, 0.75f).rgb : new Color(0.3f, 0.3f, 0.3f);
+                }
+            }
         }
 
         private static void ChallengeSelectPage_ctor(On.Menu.ChallengeSelectPage.orig_ctor orig, ChallengeSelectPage self, Menu.Menu menu, MenuObject owner, Vector2 pos)
@@ -166,7 +184,36 @@ namespace ExpeditionExtraConfig
                     instance.AddColorInterface();
                     self.PlaySound(SoundID.MENU_Button_Standard_Button_Pressed);
                 }
-
+                else if (message == "RAINBOW")
+                {
+                    //If cheat value, then 0
+                    //If 0 and cheating, then 69
+                    //Else normal behavior
+                    if (ExpeditionGame.ExIndex(ExpeditionData.slugcatPlayer) > -1)
+                    {
+                        self.PlaySound(SoundID.MENU_Player_Join_Game);
+                        int num = ExpeditionData.ints[ExpeditionGame.ExIndex(ExpeditionData.slugcatPlayer)];
+                        if (num == 1)
+                        {
+                            ExpeditionData.ints[ExpeditionGame.ExIndex(ExpeditionData.slugcatPlayer)] = 2;
+                        }
+                        else if (num == 2)
+                        {
+                            ExpeditionData.ints[ExpeditionGame.ExIndex(ExpeditionData.slugcatPlayer)] = 1;
+                        }
+                        else if (ExpeditionData.ints[ExpeditionGame.ExIndex(ExpeditionData.slugcatPlayer)] == 69)
+                        {
+                            ExpeditionData.ints[ExpeditionGame.ExIndex(ExpeditionData.slugcatPlayer)] = 0;
+                        }
+                        else if (ExpeditionData.ints[ExpeditionGame.ExIndex(ExpeditionData.slugcatPlayer)] == 0)
+                        {
+                            if (WConfig.cfgUnlockEgg.Value)
+                            {
+                                ExpeditionData.ints[ExpeditionGame.ExIndex(ExpeditionData.slugcatPlayer)] = 69;
+                            }
+                        }
+                    }
+                }
             }
         }
 
@@ -218,7 +265,14 @@ namespace ExpeditionExtraConfig
                         instance.colorsCheckbox.buttonBehav.greyedOut = false;
                     }
                 }
-
+                if (ExpeditionData.ints.Sum() >= 8 || WConfig.cfgUnlockEgg.Value)
+                {
+                    instance.rainbowButton = new SymbolButton(self.menu, self, "GuidanceSlugcat", "RAINBOW", new Vector2(996f+40f, 16f));
+                    instance.rainbowButton.roundedRect.size = new Vector2(32f, 32f);
+                    instance.rainbowButton.size = instance.rainbowButton.roundedRect.size;
+                    self.subObjects.Add(instance.rainbowButton);
+                  
+                }
             }
         } 
 

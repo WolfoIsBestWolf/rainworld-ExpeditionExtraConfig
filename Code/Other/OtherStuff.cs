@@ -20,31 +20,29 @@ namespace ExpeditionExtraConfig
                 x => x.MatchLdfld("RainWorldGame", "clock"),
                 x => x.MatchLdcI4(1200)))
             {
-                //c.Index += 1;
-                c.EmitDelegate<Func<int, int>>((karma) =>
+                /*c.EmitDelegate<Func<int, int>>((karma) =>
                 {
                     if (WConfig.cfgPauseWarning.Value)
                     {
                         return 300;
                     }
                     return karma;
-                });
+                });*/
                Debug.Log("ExpeditionConfig: Pause IL Hook Success");
             }
             else
             {
                Debug.Log("ExpeditionConfig: Pause IL Hook Failed");
             }
-
+            
             if (c.TryGotoPrev(MoveType.After,
                 x => x.MatchLdfld("DeathPersistentSaveData", "karma")))
             {
-                //c.Index += 1;
                 c.EmitDelegate<Func<int, int>>((karma) =>
                 {
                     if (WConfig.cfgRemovePermaDeath.Value)
                     {
-                        return 1;
+                        return 12;
                     }
                     return karma;
                 });
@@ -74,7 +72,6 @@ namespace ExpeditionExtraConfig
             {
                 self.hasPlayedASongThisCycle = false;
                 musicEvent.cyclesRest = 0;
-          
             }     
             orig(self, musicEvent);
         }

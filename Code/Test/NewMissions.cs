@@ -9,7 +9,8 @@ using MoreSlugcats;
 using Expedition;
 using RWCustom;
 using System.Runtime.Serialization;
-using System.Reflection;
+using System.IO;
+using UnityEngine.UI;
 
 namespace ExpeditionExtraConfig
 {
@@ -17,12 +18,86 @@ namespace ExpeditionExtraConfig
     {
         public static void Start()
         {
-            On.Expedition.ExpeditionProgression.ParseMissionFiles += ExpeditionProgression_ParseMissionFiles;
+         
             //On.Expedition.ExpeditionProgression.MissionFromJson += ExpeditionProgression_MissionFromJson;
 
             IL.Room.Loaded += AddDepthsScript;
             On.Expedition.DepthsFinishScript.Update += DepthsFinishScript_Update;
+            On.Expedition.ExpeditionProgression.ParseMissionFiles += CorrectMissionCategoryName;
+
+            // On.HUD.RainMeter.ctor += RainMeter_ctor;
+
+            On.Expedition.ExpeditionProgression.ParseMissionFiles += VistaMission;
+
+            IL.World.SpawnGhost += World_SpawnGhost;
+            On.World.CheckForRegionGhost += World_CheckForRegionGhost;
         }
+
+        private static bool World_CheckForRegionGhost(On.World.orig_CheckForRegionGhost orig, SlugcatStats.Name slugcatIndex, string regionString)
+        {
+            if (Custom.rainWorld.ExpeditionMode && ExpeditionData.activeMission == "EEC_Future1")
+            {
+                if (regionString == "SL")
+                {
+                    Debug.Log("SL Echo on Mission 2");
+                    return true;
+                }
+            }
+            return orig(slugcatIndex, regionString);
+        }
+
+        private static void World_SpawnGhost(ILContext il)
+        {
+            ILCursor c = new(il);
+
+            if (c.TryGotoNext(MoveType.After,
+            x => x.MatchLdsfld("MoreSlugcats.MoreSlugcatsEnums/GhostID", "SL")))
+            {
+                c.TryGotoNext(MoveType.After,
+            x => x.MatchCallvirt("RainWorldGame", "get_StoryCharacter"));
+                c.EmitDelegate<Func<SlugcatStats.Name, SlugcatStats.Name>>((room) =>
+                {
+                    if (Custom.rainWorld.ExpeditionMode && ExpeditionData.activeMission == "EEC_Future1")
+                    {
+                        Debug.Log("SL Echo on Mission");
+                        return MoreSlugcatsEnums.SlugcatStatsName.Saint;
+                    }
+                    return room;
+                });
+            }
+            else
+            {
+                Debug.Log("Failed World_SpawnGhost");
+            }
+        }
+
+        private static void RainMeter_ctor(On.HUD.RainMeter.orig_ctor orig, HUD.RainMeter self, HUD.HUD hud, FContainer fContainer)
+        {
+            orig(self, hud, fContainer);
+            if (ModManager.MSC && (hud.owner as Player).SlugCatClass == MoreSlugcatsEnums.SlugcatStatsName.Saint && hud.map.RegionName != "HR")
+            {
+                //Not visible for Saint challenge
+            }
+        }
+
+        private static void CorrectMissionCategoryName(On.Expedition.ExpeditionProgression.orig_ParseMissionFiles orig)
+        {
+            orig();
+            Debug.Log("Fix Mission Category");
+            var mod = ModManager.GetModById("ExpeditionExtraConfig");
+            string dir = Path.GetFileName(mod.path).ToLowerInvariant();
+            if (ExpeditionProgression.customMissions.ContainsKey(dir))
+            {
+                if (!ExpeditionProgression.customMissions.ContainsKey(mod.id))
+                {
+                    var pair = ExpeditionProgression.customMissions[dir];
+                    ExpeditionProgression.customMissions.Add(mod.id, pair);
+                }
+                ExpeditionProgression.customMissions.Remove(dir);
+            }
+
+        }
+
 
         private static void AddDepthsScript(ILContext il)
         {
@@ -73,14 +148,9 @@ namespace ExpeditionExtraConfig
         }
 
      
-        private static void ExpeditionProgression_ParseMissionFiles(On.Expedition.ExpeditionProgression.orig_ParseMissionFiles orig)
+        private static void VistaMission(On.Expedition.ExpeditionProgression.orig_ParseMissionFiles orig)
         {
             orig();
-            if (!WConfig.cfgTestingMission.Value)
-            {
-                return;
-            }
-
             //We could, add then remove the hook ig 
             #region Rubicon
             /*ExpeditionProgression.Mission misRubicon = new ExpeditionProgression.Mission
@@ -103,19 +173,12 @@ namespace ExpeditionExtraConfig
             temp3.FromString("HR><HR_L02><750><3525><0><0><0><0><0");
             misRubicon.challenges.Add(temp3);
             */
-           
+
             #endregion
-
-            /*foreach (var region in Custom.rainWorld.progression.regionNames)
+            if (!WConfig.cfgTestingMission.Value)
             {
-                var vistaRegion = ChallengeTools.VistaLocations[region];
-                foreach (var room in vistaRegion)
-                {
-                    string args = "\"VistaChallenge~"+ region + "><"+ room.Key + "><"+ room.Value.x + "><"+ room.Value.y + "><0><0><0\",";
-                    Debug.Log(args);
-                }
-            }*/
-
+                return;
+            }
             ExpeditionProgression.Mission vistaMission = new ExpeditionProgression.Mission
             {
                 key = "AllVistas_All",
@@ -156,15 +219,18 @@ namespace ExpeditionExtraConfig
                 }
             }
 
-            var MissionList = new List<ExpeditionProgression.Mission>() { vistaMission, vistaMissionW };
-
+  
             ExpeditionProgression.missionList.Add(vistaMission);
             ExpeditionProgression.missionList.Add(vistaMissionW);
-            if (!ExpeditionProgression.customMissions.ContainsKey("VistaTesting"))
+            if (ExpeditionProgression.customMissions.ContainsKey("ExpeditionExtraConfig"))
             {
-                ExpeditionProgression.customMissions.Add("VistaTesting", MissionList);
+                if (ExpeditionProgression.customMissions["ExpeditionExtraConfig"].Count < 5)  
+                {
+                        ExpeditionProgression.customMissions["ExpeditionExtraConfig"].Add(vistaMission);
+                        ExpeditionProgression.customMissions["ExpeditionExtraConfig"].Add(vistaMissionW);
+                }
             }
-           
+
         }
     }
 }

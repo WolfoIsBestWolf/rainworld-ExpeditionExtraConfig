@@ -43,27 +43,7 @@ namespace ExpeditionExtraConfig
         }
 
 
-
-        public static void ArtificerGateWrongSymbol(ILContext il)
-        {
-            ILCursor c = new(il);
-            c.TryGotoNext(MoveType.Before,
-            x => x.MatchLdsfld("ModManager", "Expedition"));
-
-            if (c.TryGotoNext(MoveType.Before,
-            x => x.MatchLdsfld("RegionGate/GateRequirement", "OneKarma"),
-            x => x.MatchStfld("GateKarmaGlyph", "requirement")
-            ))
-            {
-                c.Index -= 1;
-                c.RemoveRange(4);
-                //UnityEngine.Debug.Log("ExpeditionExtraConfig: Karma Gate IL Success");
-            }
-            else
-            {
-                UnityEngine.Debug.Log("ExpeditionExtraConfig: Karma Gate IL Failed");
-            }
-        }
+ 
 
         /*private void ArtificerNeedCorpseForDoor(On.RegionGate.orig_customKarmaGateRequirements orig, RegionGate self)
        {

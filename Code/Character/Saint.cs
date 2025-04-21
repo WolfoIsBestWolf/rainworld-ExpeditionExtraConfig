@@ -43,8 +43,35 @@ namespace ExpeditionExtraConfig
             On.Expedition.PinChallenge.ValidForThisSlugcat += PinChallenge_ValidForThisSlugcat;
 
             On.GhostWorldPresence.SpawnGhost += SaintEasierEchoEncounters;
+
+            IL.HUD.RainMeter.Update += RainMeter_Update;
+            IL.HUD.RainMeter.Draw += RainMeter_Update;
         }
 
+   
+        private static void RainMeter_Update(ILContext il)
+        {
+            ILCursor c = new(il);
+            if (c.TryGotoNext(MoveType.After,
+               x => x.MatchLdsfld("MoreSlugcats.MoreSlugcatsEnums/SlugcatStatsName", "Saint"),
+               x => x.MatchCall("ExtEnum`1<SlugcatStats/Name>", "op_Equality")
+               ))
+            {
+                c.EmitDelegate<Func<bool, bool>>((karma) =>
+                {
+                    if (WConfig.cfgSnowMeter.Value)
+                    {
+                        return false;
+                    }
+                    return karma;
+                });
+            }
+            else
+            {
+                Debug.Log("ExpeditionConfig: RainMeter_Update IL Hook Failed");
+            }
+        }
+ 
         private static bool PinChallenge_ValidForThisSlugcat(On.Expedition.PinChallenge.orig_ValidForThisSlugcat orig, PinChallenge self, SlugcatStats.Name slugcat)
         {
             if (slugcat == MoreSlugcatsEnums.SlugcatStatsName.Saint)
@@ -87,22 +114,19 @@ namespace ExpeditionExtraConfig
         {
             if (Custom.rainWorld.ExpeditionMode && Custom.rainWorld.progression.currentSaveState.cycleNumber > 0)
             {
-                /*if (Custom.rainWorld.progression.PlayingAsSlugcat == MoreSlugcatsEnums.SlugcatStatsName.Artificer)
+                if (Custom.rainWorld.progression.PlayingAsSlugcat == MoreSlugcatsEnums.SlugcatStatsName.Artificer)
                 {
-                    UnityEngine.Debug.Log("Artificer only when max Karma and previous encounter");
-                    if (karma >= karmaCap)
-                    {
-                        return ghostPreviouslyEncountered < 2;
-                    }
-                }*/
+                }
                 if (Custom.rainWorld.progression.PlayingAsSlugcat == MoreSlugcatsEnums.SlugcatStatsName.Saint)
                 {
                     if (WConfig.cfgSaint_Echoes.Value)
                     {
-                        //Idk why this works but it just does??
-                        UnityEngine.Debug.Log("Saint regardless of Karma and previous encounter");
                         return ghostPreviouslyEncountered < 2;
                     }
+                }
+                if (ExpeditionData.activeMission == "EEC_Future1")
+                {
+                    return ghostPreviouslyEncountered < 2;
                 }
             }
             return orig(ghostID, karma, karmaCap, ghostPreviouslyEncountered, playingAsRed);
@@ -124,7 +148,6 @@ namespace ExpeditionExtraConfig
             if (c.TryGotoNext(MoveType.After,
                 x => x.MatchLdfld("Player/InputPackage", "spec")))
             {
-                //c.Index += 1;
                 c.Emit(OpCodes.Ldarg_0);
                 c.EmitDelegate<System.Func<bool, Player, bool>>((input, slug) =>
                 {
@@ -151,7 +174,6 @@ namespace ExpeditionExtraConfig
             x => x.MatchCallOrCallvirt("Creature", "Die")
             ))
             {
-                //c.Index -= 1;
                 c.Emit(OpCodes.Ldarg_0);
                 c.EmitDelegate<System.Func<PhysicalObject, Player, PhysicalObject>>((creature, player) =>
                 {
@@ -190,12 +212,11 @@ namespace ExpeditionExtraConfig
             if (c.TryGotoNext(MoveType.After,
             x => x.MatchLdloc(0)))
             {
-                //c.Index -= 3;
                 c.EmitDelegate<Func<List<string>, List<string>>>((list) =>
                 {
                     if (WConfig.cfgSaintSubmergedEcho.Value && ExpeditionData.slugcatPlayer == MoreSlugcatsEnums.SlugcatStatsName.Saint)
                     {
-                        if (WConfig.cfgRemoveRoboLock.Value || ExpeditionData.challengeDifficulty > 0.9f)
+                        if (WConfig.cfgRemoveRoboLock.Value || ExpeditionData.challengeDifficulty > 0.85f)
                         {
                             Debug.Log("Added Submerged Echo");
                             list.Add("MS");

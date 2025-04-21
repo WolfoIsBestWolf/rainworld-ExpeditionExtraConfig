@@ -38,10 +38,6 @@ namespace ExpeditionExtraConfig
             On.Expedition.PearlDeliveryChallenge.Points += RivMorePoints_PearlDeliver;
             On.Expedition.NeuronDeliveryChallenge.Points += RivMorePoints_NeuronDeliver;
             #endregion
-
-            //Vista Challenge more points
-      
-          
         }
 
        
@@ -78,18 +74,21 @@ namespace ExpeditionExtraConfig
                 if (ExpeditionData.slugcatPlayer == MoreSlugcatsEnums.SlugcatStatsName.Rivulet)
                 {
                     RainyCycle = false;
+                    if (world.region.name != "MS")
+                    {
+                        if (WConfig.cfgRiv_HeavyRainChance.Value > 0)
+                        {
+                            //UnityEngine.Debug.Log("Random short cycle");
+                            world.game.GetStorySession.SetRandomSeedToCycleSeed(1);
+                            RainyCycle = UnityEngine.Random.Range(0, 100) < WConfig.cfgRiv_HeavyRainChance.Value;
+                            Debug.Log("Expedition roll for short Rivulet Cycle : " + world.game.GetStorySession.saveState.cycleNumber + " result : " + RainyCycle);
+                        }
+                    }
                     /*if (world.game.GetStorySession.saveState.cycleNumber < EECSettings.cfgRiv_HeavyRainDuration.Value)
                     {
                         UnityEngine.Debug.Log("Guaranteed short cycle");
                          RainyCycle = true;
-                    }*/
-                    if (WConfig.cfgRiv_HeavyRainChance.Value > 0)
-                    {
-                        //UnityEngine.Debug.Log("Random short cycle");
-                        world.game.GetStorySession.SetRandomSeedToCycleSeed(1);
-                        RainyCycle = UnityEngine.Random.Range(0, 100) < WConfig.cfgRiv_HeavyRainChance.Value;
-                        UnityEngine.Debug.Log("Expedition roll for short Rivulet Cycle : " + world.game.GetStorySession.saveState.cycleNumber + " result : " + RainyCycle);
-                    }  
+                    }*/                   
                 }
             }
             orig(self,world,minutes);
@@ -149,12 +148,9 @@ namespace ExpeditionExtraConfig
             {
                 if (WConfig.cfgRivuletShortCycles.Value && RainyCycle)
                 {
-                    if (!self.world.singleRoomWorld && self.world.region.name != "MS")
-                    {
-                        int num = orig(self);
-                        num = (int)((float)num * WConfig.cfgRiv_RainMult.Value);
-                        return num;
-                    }
+                    int num = orig(self);
+                    num = (int)((float)num * WConfig.cfgRiv_RainMult.Value);
+                    return num;
                 }
             }
             return orig(self);
@@ -170,7 +166,7 @@ namespace ExpeditionExtraConfig
                 {
                     if (Custom.rainWorld.ExpeditionMode)
                     {
-                        if (WConfig.cfgRivuletShortCycles.Value && RainyCycle)
+                        if (WConfig.cfgRivuletShortCycles.Value)
                         {
                             return true;
                         }

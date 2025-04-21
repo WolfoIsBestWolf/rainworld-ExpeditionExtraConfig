@@ -12,7 +12,7 @@ using HUD;
 
 namespace ExpeditionExtraConfig
 {
-    [BepInPlugin("wolfo.ExpeditionExtraConfig", "ExpeditionExtraConfig", "1.3.0")]
+    [BepInPlugin("wolfo.ExpeditionExtraConfig", "ExpeditionExtraConfig", "1.3.2")]
     public class ExpeditionExtraConfig : BaseUnityPlugin
     {
         public static bool initialized = false;
@@ -27,7 +27,6 @@ namespace ExpeditionExtraConfig
             //After Config has loaded
             orig(self);
             WConfig.CfgUnlockAll_OnChange();
-
         }
 
         public void RainWorld_OnModsInit(On.RainWorld.orig_OnModsInit orig, RainWorld self)
@@ -39,14 +38,14 @@ namespace ExpeditionExtraConfig
             }
             initialized = true;
 
-            UnityEngine.Debug.Log("ExpeditionExtraConfig: Wolfo Mod Loaded");
+            Debug.Log("ExpeditionExtraConfig: Wolfo Mod Loaded");
             MachineConnector.SetRegisteredOI("ExpeditionExtraConfig", WConfig.instance);
             OnHooks();
         }
 
         public void OnHooks()
         {
-            UnityEngine.Debug.Log("ExpeditionExtraConfig: On Hooks being added");
+            Debug.Log("ExpeditionExtraConfig: On Hooks being added");
 
          
             On.SaveState.ctor += ChangeStartingStats;
@@ -71,40 +70,34 @@ namespace ExpeditionExtraConfig
             On.Music.MusicPlayer.GameRequestsSong += OtherStuff.AlwaysPlayMusic;
 
             On.HUD.Map.ctor += VistaMap.AddVistaPointsToMap;
-            On.Expedition.ChallengeTools.AppendAdditionalCreatureSpawns += ChallengeTools_AppendAdditionalCreatureSpawns;
-
-
             On.Menu.ChallengeSelectPage.UpdateChallengeButtons += FixPointsNotBeingDisplayed;
  
-            On.GateKarmaGlyph.ctor += RemoveRoboGate;
-
-            //On.Expedition.VistaChallenge.ChallengeName += VistaChallenge_ChallengeName;
 
             NewMissions.Start();
             PassageStuff.Start();
+            On.RainWorldGame.ctor += UnlockAll.SpawnRainbowCycleIfCheated;
+            On.Menu.UnlockDialog.TogglePerk += UnlockAll.UnlockDialog_TogglePerk;
+
+            On.GateKarmaGlyph.ctor += RemoveRoboGate;
+            On.HUD.Map.GateMarker.ctor += RemoveRoboGateMark;
+            Futile.atlasManager.LoadAtlas("atlases/eec_sprites");
         }
 
-   
-        private string VistaChallenge_ChallengeName(On.Expedition.VistaChallenge.orig_ChallengeName orig, VistaChallenge self)
+        private void RemoveRoboGateMark(On.HUD.Map.GateMarker.orig_ctor orig, Map.GateMarker self, Map map, int room, RegionGate.GateRequirement karma, bool showAsOpen)
         {
-            return orig(self);
-        }
-
-        private void ChallengeTools_AppendAdditionalCreatureSpawns(On.Expedition.ChallengeTools.orig_AppendAdditionalCreatureSpawns orig)
-        {
-            orig();
-            int num2;
-            ChallengeTools.ExpeditionCreature item2 = new ChallengeTools.ExpeditionCreature
+            if (ModManager.MSC && karma == MoreSlugcatsEnums.GateRequirement.RoboLock)
             {
-                creature = DLCSharedEnums.CreatureTemplateType.StowawayBug,
-                points = (ChallengeTools.creatureScores.TryGetValue(DLCSharedEnums.CreatureTemplateType.StowawayBug.value, out num2) ? num2 : 0),
-                spawns = 1
-            };
-            if (ChallengeTools.creatureSpawns.ContainsKey(MoreSlugcatsEnums.SlugcatStatsName.Gourmand.value))
-            {
-                ChallengeTools.creatureSpawns[MoreSlugcatsEnums.SlugcatStatsName.Gourmand.value].Add(item2);
+                if (Custom.rainWorld.ExpeditionMode && WConfig.cfgRemoveRoboLock.Value)
+                {
+                    if (map.RegionName != "DM")
+                    {
+                        karma = RegionGate.GateRequirement.OneKarma;
+                        showAsOpen = true;
+                    }
+                   
+                }
             }
-             
+            orig(self, map, room, karma, showAsOpen);
         }
 
         private void RemoveRoboGate(On.GateKarmaGlyph.orig_ctor orig, GateKarmaGlyph self, bool side, RegionGate gate, RegionGate.GateRequirement requirement)
@@ -142,17 +135,18 @@ namespace ExpeditionExtraConfig
            
         }
 
-
-
         public void StartWithStomachPearl(On.Player.orig_ctor orig, Player self, AbstractCreature abstractCreature, World world)
         {
             orig(self, abstractCreature, world);
             //UnityEngine.Debug.Log("Player_ctor");
-            if (world.game.rainWorld.ExpeditionMode && world.game.rainWorld.progression.currentSaveState.cycleNumber == 0 && self.abstractCreature.Room.name == ExpeditionData.startingDen && world.rainCycle.CycleProgression <= 2f)
+            if (world.game.rainWorld.ExpeditionMode && world.game.rainWorld.progression.currentSaveState.cycleNumber == 0 && self.abstractCreature.Room.name == ExpeditionData.startingDen && world.rainCycle.CycleProgression <= 3f)
             {
-                if (WConfig.cfgStomachPearl.Value && self.SlugCatClass == SlugcatStats.Name.Red)
+                if ( self.SlugCatClass == SlugcatStats.Name.Red)
                 {
-                    world.game.FirstRealizedPlayer.objectInStomach = new DataPearl.AbstractDataPearl(world, AbstractPhysicalObject.AbstractObjectType.DataPearl, null, abstractCreature.spawnDen, world.game.GetNewID(), -1, -1, null, DataPearl.AbstractDataPearl.DataPearlType.Red_stomach);
+                    if (WConfig.cfgStomachPearl.Value)
+                    {
+                        world.game.FirstRealizedPlayer.objectInStomach = new DataPearl.AbstractDataPearl(world, AbstractPhysicalObject.AbstractObjectType.DataPearl, null, abstractCreature.spawnDen, world.game.GetNewID(), -1, -1, null, DataPearl.AbstractDataPearl.DataPearlType.Red_stomach);
+                    }       
                 }
                 else if (self.SlugCatClass == MoreSlugcatsEnums.SlugcatStatsName.Rivulet)
                 {
@@ -169,11 +163,12 @@ namespace ExpeditionExtraConfig
                         abstractPhysicalBall.RealizeInRoom();
                     }
                 }
+                else if (ExpeditionData.activeMission == "EEC_Future1")
+                {
+                    world.game.FirstRealizedPlayer.objectInStomach = new AbstractPhysicalObject(world, AbstractPhysicalObject.AbstractObjectType.Lantern, null, abstractCreature.spawnDen, world.game.GetNewID());
+                }
             }
         }
-
-
-
 
         public void ChangeStartingStats(On.SaveState.orig_ctor orig, SaveState self, SlugcatStats.Name saveStateNumber, PlayerProgression progression)
         {
@@ -182,6 +177,15 @@ namespace ExpeditionExtraConfig
             if (Custom.rainWorld.ExpeditionMode)
             { 
                 self.deathPersistentSaveData.karmaCap = WConfig.cfgKarmaStartMax.Value - 1;
+                
+                if (Expedition.ExpeditionData.activeMission == "EEC_Future1")
+                {
+                    self.currentTimelinePosition = SlugcatStats.SlugcatToTimeline(MoreSlugcatsEnums.SlugcatStatsName.Saint);
+                }
+                else if (Expedition.ExpeditionData.activeMission == "EEC_Past1")
+                {
+                    self.currentTimelinePosition = SlugcatStats.SlugcatToTimeline(MoreSlugcatsEnums.SlugcatStatsName.Spear);
+                }
 
                 bool visitsPebbleKarma = false;
                 if (saveStateNumber == SlugcatStats.Name.White)
@@ -218,7 +222,6 @@ namespace ExpeditionExtraConfig
                 }
                 if (saveStateNumber == MoreSlugcatsEnums.SlugcatStatsName.Rivulet)
                 {
-                    self.miscWorldSaveData.SLOracleState.neuronsLeft = 7;  //Set to 5 due to Hunter
                     self.miscWorldSaveData.pebblesEnergyTaken = !WConfig.cfgRivuletShortCycles.Value;
                     self.deathPersistentSaveData.altEnding = true; //This just fixes some junk think it's worth keeping
                 }
@@ -227,8 +230,7 @@ namespace ExpeditionExtraConfig
                     self.miscWorldSaveData.SSaiConversationsHad = 0;
                 }
                 else if (saveStateNumber == MoreSlugcatsEnums.SlugcatStatsName.Saint)
-                {
-                    self.miscWorldSaveData.SLOracleState.neuronsLeft = 7; //Set to 5 due to Hunter
+                {                
                     if (WConfig.cfgSaint_MaxKarmaBool.Value)
                     {
                         self.deathPersistentSaveData.karmaCap = WConfig.cfgSaint_MaxKarma.Value - 1;
@@ -239,6 +241,10 @@ namespace ExpeditionExtraConfig
                 if (visitsPebbleKarma && WConfig.cfgMaxKarmaPebbles.Value)
                 {
                     self.miscWorldSaveData.SSaiConversationsHad = 55;
+                }
+                if (SlugcatStats.AtOrAfterTimeline(self.currentTimelinePosition, SlugcatStats.Timeline.Rivulet))
+                {
+                    self.miscWorldSaveData.SLOracleState.neuronsLeft = 7; //Set to 5 due to Hunter
                 }
             }
         }

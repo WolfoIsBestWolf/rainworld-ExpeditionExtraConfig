@@ -24,18 +24,47 @@ namespace ExpeditionExtraConfig
             On.Expedition.ItemHoardChallenge.Points += ItemHoardChallenge_Points;
             On.Expedition.PearlHoardChallenge.Points += PearlHoardChallenge_Points;
 
-            On.Expedition.VistaChallenge.Points += VistaChallenge_Points;
-
+            
             //On.Expedition.ChallengeTools.GenerateVistaLocations += ChallengeTools_GenerateVistaLocations;
             On.Expedition.Challenge.ValidForThisSlugcat += Challenge_ValidForThisSlugcat;
 
             On.Expedition.GlobalScoreChallenge.CreatureKilled += GlobalScoreChallenge_CreatureKilled;
             On.Expedition.CycleScoreChallenge.CreatureKilled += FixSomeCreaturesNotCounting_CycleScoreChallenge_CreatureKilled;
+            
+            On.Expedition.VistaChallenge.Points += VistaChallenge_Points;
+            IL.Expedition.VistaChallenge.Generate += VistaChallenge_Generate;
+
+            On.Expedition.ChallengeTools.AppendAdditionalCreatureSpawns += ChallengeTools_AppendAdditionalCreatureSpawns;
+
+        }
+
+        private static void VistaChallenge_Generate(ILContext il)
+        {
+            ILCursor c = new(il);
+            if (c.TryGotoNext(MoveType.After,
+            x => x.MatchCall("SlugcatStats", "SlugcatStoryRegions")))
+            {
+                c.EmitDelegate<Func<List<string>, List<string>>>((list) =>
+                {
+                    if (WConfig.cfgVista_OE.Value)
+                    {
+                        if (ExpeditionData.slugcatPlayer == SlugcatStats.Name.White || ExpeditionData.slugcatPlayer == SlugcatStats.Name.Yellow)
+                        {
+                            list.Add("OE");
+                        }
+                    }
+                    return list;
+                });            
+            }
+            else
+            {
+                Debug.Log("ExpeditionExtraConfig: OE Vistas IL hook fail");
+            }
         }
 
         private static int PearlHoardChallenge_Points(On.Expedition.PearlHoardChallenge.orig_Points orig, PearlHoardChallenge self)
         {
-            if (WConfig.cfgScoreAdjustments.Value)
+            if (WConfig.cfgHoardingBonus.Value)
             {
                 if (self.amount == 4)
                 {
@@ -52,7 +81,7 @@ namespace ExpeditionExtraConfig
         private static void ChallengeTools_ParseCreatureSpawns(On.Expedition.ChallengeTools.orig_ParseCreatureSpawns orig)
         {
             orig();
-            if (WConfig.cfgScoreAdjustments.Value)
+            if (WConfig.cfgHoardingBonus.Value)
             {
                 ChallengeTools.creatureScores["SpitterSpider"] = 6;
                 ChallengeTools.creatureScores["MotherSpider"] = 5;
@@ -133,11 +162,11 @@ namespace ExpeditionExtraConfig
         {
             if (self is VistaChallenge)
             {
-                if (!WConfig.cfgVista_Submerged.Value && (self as VistaChallenge).region == "MS")
+                if (!WConfig.cfgVista_MS.Value && (self as VistaChallenge).region == "MS")
                 {
                     return false;
                 }
-                if (!WConfig.cfgVista_Waterfront.Value && (self as VistaChallenge).region == "LM")
+                if (!WConfig.cfgVista_LM.Value && (self as VistaChallenge).region == "LM")
                 {
                     return false;
                 }
@@ -154,9 +183,16 @@ namespace ExpeditionExtraConfig
         private static int VistaChallenge_Points(On.Expedition.VistaChallenge.orig_Points orig, VistaChallenge self)
         {
             //MC Regions that are hella out of the way
-            if (self.region == "MS" || self.region == "LC" || self.region == "OE")
+            if (WConfig.cfgVistaPearlScore.Value)
             {
-                return orig(self) + 20;
+                if (self.region == "MS" || self.region == "LC" || self.region == "OE" || self.region == "HR")
+                {
+                    return orig(self) + 20;
+                }
+                else if (self.region == "DM" || self.region == "RM" || self.region == "SS")
+                {
+                    return orig(self) + 10;
+                }
             }
             return orig(self);
         }
@@ -164,7 +200,7 @@ namespace ExpeditionExtraConfig
 
         private static int ItemHoardChallenge_Points(On.Expedition.ItemHoardChallenge.orig_Points orig, ItemHoardChallenge self)
         {
-            if (WConfig.cfgScoreAdjustments.Value)
+            if (WConfig.cfgHoardingBonus.Value)
             {
                 if (self.amount == 8)
                 {
@@ -205,7 +241,25 @@ namespace ExpeditionExtraConfig
             Debug.Log(temp.target.value);*/
             return temp;
         }
- 
+
+
+        public static void ChallengeTools_AppendAdditionalCreatureSpawns(On.Expedition.ChallengeTools.orig_AppendAdditionalCreatureSpawns orig)
+        {
+            orig();
+            int num2;
+            ChallengeTools.ExpeditionCreature item2 = new ChallengeTools.ExpeditionCreature
+            {
+                creature = DLCSharedEnums.CreatureTemplateType.StowawayBug,
+                points = (ChallengeTools.creatureScores.TryGetValue(DLCSharedEnums.CreatureTemplateType.StowawayBug.value, out num2) ? num2 : 0),
+                spawns = 1
+            };
+            if (ChallengeTools.creatureSpawns.ContainsKey(MoreSlugcatsEnums.SlugcatStatsName.Gourmand.value))
+            {
+                ChallengeTools.creatureSpawns[MoreSlugcatsEnums.SlugcatStatsName.Gourmand.value].Add(item2);
+            }
+
+        }
+
 
         private static void ExpeditionMenu_ExpeditionSetup(On.Menu.ExpeditionMenu.orig_ExpeditionSetup orig, Menu.ExpeditionMenu self)
         {
@@ -285,14 +339,17 @@ namespace ExpeditionExtraConfig
  
         public static int Missing_MS_LM(On.Expedition.PearlDeliveryChallenge.orig_RegionPoints orig, PearlDeliveryChallenge self)
         {
-            if (self.region == "MS")
+            if (WConfig.cfgVistaPearlScore.Value)
             {
-                return 35;
-            }
-            else if (self.region == "LM")
-            {
-                return 10;
-            }
+                if (self.region == "MS")
+                {
+                    return 35;
+                }
+                else if (self.region == "LM")
+                {
+                    return 10;
+                }
+            }           
             return orig(self);
         }
     }

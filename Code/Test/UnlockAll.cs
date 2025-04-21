@@ -38,10 +38,26 @@ namespace ExpeditionExtraConfig
             IL.Expedition.ExpeditionProgression.UnlockSprite += NoNeedForUnlocks2;
             IL.Menu.UnlockDialog.SetUpBurdenDescriptions += NoNeedForUnlocks4;
 
-            On.Menu.UnlockDialog.TogglePerk += UnlockDialog_TogglePerk;
             On.Expedition.ExpeditionProgression.MissionAvailable += ExpeditionProgression_MissionAvailable;
             On.Expedition.ExpeditionProgression.MissionRequirements += ExpeditionProgression_MissionRequirements;
+
+            
         }
+        public static void SpawnRainbowCycleIfCheated(On.RainWorldGame.orig_ctor orig, RainWorldGame self, ProcessManager manager)
+        {
+            orig(self, manager);
+            if (self.session != null && self.session is StoryGameSession && !self.rainWorld.safariMode && self.rainWorld.ExpeditionMode)
+            {
+                if (WConfig.cfgUnlockEgg.Value)
+                {
+                    if ((ExpeditionGame.egg == null || (ExpeditionGame.egg != null && ExpeditionGame.egg.rwGame != self)) && ExpeditionGame.ExIndex(ExpeditionData.slugcatPlayer) > -1 && ExpeditionData.ints[ExpeditionGame.ExIndex(ExpeditionData.slugcatPlayer)] == 69)
+                    {
+                        ExpeditionGame.egg = new Eggspedition(self);
+                    }
+                }
+            }
+        }
+
 
         private static string ExpeditionProgression_MissionRequirements(On.Expedition.ExpeditionProgression.orig_MissionRequirements orig, string key)
         {
@@ -59,10 +75,8 @@ namespace ExpeditionExtraConfig
             IL.Expedition.ExpeditionProgression.BurdenDescription -= NoNeedForUnlocks;
             IL.Expedition.ExpeditionProgression.BurdenManualDescription -= NoNeedForUnlocks;
 
-
             IL.Expedition.ExpeditionProgression.UnlockDescription -= NoNeedForUnlocks;
             IL.Expedition.ExpeditionProgression.UnlockName -= NoNeedForUnlocks;
-
 
             IL.Menu.ExpeditionManualDialog.PerkManualDescription -= NoNeedForUnlocks;
             IL.Menu.MusicTrackButton.ctor -= NoNeedForUnlocks;
@@ -75,8 +89,7 @@ namespace ExpeditionExtraConfig
 
             IL.Expedition.ExpeditionProgression.UnlockSprite -= NoNeedForUnlocks2;
             IL.Menu.UnlockDialog.SetUpBurdenDescriptions -= NoNeedForUnlocks4;
-
-            On.Menu.UnlockDialog.TogglePerk -= UnlockDialog_TogglePerk;
+ 
             On.Expedition.ExpeditionProgression.MissionAvailable -= ExpeditionProgression_MissionAvailable;
             On.Expedition.ExpeditionProgression.MissionRequirements -= ExpeditionProgression_MissionRequirements;
         }
@@ -90,9 +103,9 @@ namespace ExpeditionExtraConfig
             return orig(key);
         }
 
-        private static void UnlockDialog_TogglePerk(On.Menu.UnlockDialog.orig_TogglePerk orig, Menu.UnlockDialog self, string message)
+        public static void UnlockDialog_TogglePerk(On.Menu.UnlockDialog.orig_TogglePerk orig, Menu.UnlockDialog self, string message)
         {
-            if (WConfig.cfgUnlockAll.Value)
+            if (WConfig.cfgUnlockPerkSlots.Value)
             {
                 if (ExpeditionData.perkLimit < 8)
                 {

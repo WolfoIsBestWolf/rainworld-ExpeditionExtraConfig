@@ -109,42 +109,94 @@ namespace ExpeditionExtraConfig
  
             public VistaMarker(Map map, int room, Vector2 pos, Challenge vista) : base(map, room, new Vector2(480f, 240f), 3f)
             {
-
                 this.fadeInRad = float.PositiveInfinity;
                 this.symbolSprite = new FSprite("TravellerB", true);
                 this.symbolSprite.scale = 2f;
+                this.symbolSprite.isVisible = false; 
                 map.inFrontContainer.AddChild(this.symbolSprite);
-                this.symbolSprite.isVisible = false;
                 inRoomPos = pos;
                 challenge = vista;
+
+
+                if (WConfig.cfgVistaCircle.Value)
+                {
+                    this.spCircle = new FSprite("vistaRing", true);
+                    this.spCircle.scale = 0f;
+                    this.spCircle.isVisible = false;
+                    //this.spCircle.shader = Custom.rainWorld.Shaders["VectorCircleFadable"];
+                    map.inFrontContainer.AddChild(this.spCircle);
+
+                    //spCircle.element = Futile.atlasManager.GetElementWithName("Futile_White");
+                    //spCircle.shader = map.hud.rainWorld.Shaders["VectorCircleFadable"];
+                }
+                //vistaCircle2 = new HUDCircle(map.hud, HUDCircle.SnapToGraphic.None, map.container, 1);
             }
 
             public Challenge challenge;
             public bool visible = false;
             public float timeSinceWrongLayer = 0;
+            public float phase;
+            public Vector2 position;
+            public FSprite spCircle;
+            //public HUDCircle vistaCircle2;
+            public float alphaTimer = 0;
+            public float resetTimer = 0;
+
+            //public FadeCircle fadeCircle;
+
+            public override void Update()
+            {
+                base.Update();
+ 
+            }
 
             public override void Draw(float timeStacker)
             {
                 base.Draw(timeStacker);
-                this.visible = true;
+                this.visible = (this.fade > 0f && this.lastFade > 0f);
                 this.bkgFade.isVisible = this.visible;
                 this.symbolSprite.isVisible = this.visible;
+                if (spCircle != null)
+                {
+                    this.spCircle.isVisible = this.visible;
+                }
+                /*if (vistaCircle2 != null)
+                {
+                    vistaCircle2.sprite.isVisible = this.visible;
+                }*/
                 if (!this.visible || challenge.hidden && !challenge.revealed  || challenge.completed)
                 {
                     return;
                 }
 
                 float num = Mathf.Lerp(this.map.lastFade, this.map.fade, timeStacker) * Mathf.Lerp(this.lastFade, this.fade, timeStacker);
-                Vector2 vector = this.map.RoomToMapPos(this.inRoomPos, this.room, timeStacker);
-                this.bkgFade.x = vector.x;
-                this.bkgFade.y = vector.y;
-                this.symbolSprite.x = vector.x;
-                this.symbolSprite.y = vector.y;
-                this.bkgFade.alpha = num * 0.5f;
+                float alpha = (0.4f + 0.6f * timeSinceWrongLayer);
+                this.symbolSprite.alpha = num * alpha;
+                this.bkgFade.alpha = num * 0.5f * alpha;
 
-                this.symbolSprite.alpha = num;
-                //this.symbolSprite.color = Color.Lerp(new Color(1f, 0f, 0f), Menu.Menu.MenuRGB(Menu.Menu.MenuColors.White), 0.5f + 0.5f * Mathf.Sin(((float)this.map.counter + timeStacker) / 14f));
-                this.phase += 0.13f * Time.deltaTime;
+
+                Vector2 pos = this.map.RoomToMapPos(this.inRoomPos, this.room, 1);
+                this.bkgFade.x = pos.x;
+                this.bkgFade.y = pos.y;
+                this.symbolSprite.x = pos.x;
+                this.symbolSprite.y = pos.y;
+                this.symbolSprite.color = new HSLColor(this.phase, 0.85f, 0.65f).rgb;
+                this.bkgFade.color = symbolSprite.color;
+                if (spCircle != null)
+                {
+                    this.spCircle.color = symbolSprite.color;
+                    this.spCircle.x = pos.x;
+                    this.spCircle.y = pos.y;
+                }
+                /*if (vistaCircle2 != null)
+                {
+                    this.vistaCircle2.sprite.color = symbolSprite.color;
+                    this.vistaCircle2.sprite.x = pos.x;
+                    this.vistaCircle2.sprite.y = pos.y;
+                    this.vistaCircle2.pos = pos;
+                }*/
+
+                this.phase += 0.13f * Time.deltaTime;              
                 if (this.phase > 1f)
                 {
                     this.phase = 0f;
@@ -157,18 +209,47 @@ namespace ExpeditionExtraConfig
                 {
                     timeSinceWrongLayer -= 3.5f * Time.deltaTime;
                 }
+                //float alpha = this.map.Alpha(map.mapData.LayerOfRoom(room), timeStacker, true);
+                bkgFade.scale = 35f - 15f * timeSinceWrongLayer;
 
-                float bright = 0.3f + 0.35f * timeSinceWrongLayer; //0.75f
-                float sat = 0.6f + 0.25f * timeSinceWrongLayer;
-                //float bright = map.mapData.LayerOfRoom(room) == this.map.layer ? 0.75f : 0.3f;
-                //float sat = map.mapData.LayerOfRoom(room) == this.map.layer ? 0.85f : 0.6f;
-                this.symbolSprite.color = new HSLColor(this.phase, sat, bright).rgb;
-                this.bkgFade.color = symbolSprite.color;
-
-                this.bkgFade.scale = 25f-10f*timeSinceWrongLayer;
+                if (spCircle != null)
+                {
+                    if (alphaTimer < 0f)
+                    {
+                        spCircle.scale = 0;
+                        alphaTimer = 250f;
+                        resetTimer = 100f;
+                        //Debug.Log("Reset");
+                    }
+                    if (resetTimer < 0)
+                    {
+                        if (resetTimer < 0 && spCircle.scale < 15)
+                        {
+                            spCircle.scale += 0.02f * timeStacker;
+                        }
+                        else
+                        {
+                            //spCircle.scale += 0.02f * timeStacker;
+                            alphaTimer -= timeStacker;
+                        }
+                    }
+                    else
+                    {
+                        resetTimer -= timeStacker;
+                    }
+                    this.spCircle.alpha = num * alpha *0.5f * (alphaTimer / 250f);
+                    /*Debug.Log("s" + circle.scale);
+                    Debug.Log("a" + circle.alpha);
+                    Debug.Log("t" + timer);*/
+                }
+                 
             }
-            public float phase;
-            public Vector2 position;
+
+            public override void Destroy()
+            {
+                base.Destroy();
+               // vistaCircle2.ClearSprite();
+            }
         }
 
 
