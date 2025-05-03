@@ -37,9 +37,16 @@ namespace ExpeditionExtraConfig
                 {
                     if (orig(self) < 2)
                     {
-                        if (WConfig.cfgPupsSpawn.Value)
+                        var slugName = Custom.rainWorld.progression.PlayingAsSlugcat;
+                        if (self.saveState.cycleNumber == 0)
                         {
-                            var slugName = Custom.rainWorld.progression.PlayingAsSlugcat;
+                            if (ExpeditionGame.activeUnlocks.Contains("unl-eec-Pups") || WConfig.cfgSurvivor_StartWithPups.Value && slugName == SlugcatStats.Name.White || slugName == MoreSlugcatsEnums.SlugcatStatsName.Gourmand && WConfig.cfgGourmand_StartWithPups.Value)
+                            {
+                                return 2;
+                            }
+                        }                     
+                        if (WConfig.cfgPupsSpawn.Value)
+                        {  
                             if (WConfig.cfgPupsSpawnNonDefault.Value)
                             {
                                 //UnityEngine.Debug.Log("Expedition Pup limit 2");

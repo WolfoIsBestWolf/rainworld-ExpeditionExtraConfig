@@ -15,7 +15,7 @@ namespace ExpeditionExtraConfig
     {
         public static void Start()
         {
-            UndoRemovedHiddenChallenges();
+            HiddenChallengeStuff.Start();
             On.Expedition.PearlDeliveryChallenge.RegionPoints += Missing_MS_LM;
             On.Menu.ExpeditionMenu.ExpeditionSetup += ExpeditionMenu_ExpeditionSetup;
             On.Expedition.ChallengeTools.ParseCreatureSpawns += ChallengeTools_ParseCreatureSpawns;
@@ -36,6 +36,39 @@ namespace ExpeditionExtraConfig
 
             On.Expedition.ChallengeTools.AppendAdditionalCreatureSpawns += ChallengeTools_AppendAdditionalCreatureSpawns;
 
+            On.Expedition.ChallengeOrganizer.RandomChallenge += ChallengeOrganizer_RandomChallenge;
+            On.Menu.ExpeditionMenu.ctor += ExpeditionMenu_ctor;
+        }
+
+        private static void ExpeditionMenu_ctor(On.Menu.ExpeditionMenu.orig_ctor orig, Menu.ExpeditionMenu self, ProcessManager manager)
+        {
+            orig(self, manager);
+            if (WConfig.cfgRandom_Difficulty.Value)
+            {
+                ExpeditionData.challengeDifficulty = 0.3f;
+            }
+            else
+            {
+                ExpeditionData.challengeDifficulty = 0.5f;
+            }
+       
+        }
+
+        private static Challenge ChallengeOrganizer_RandomChallenge(On.Expedition.ChallengeOrganizer.orig_RandomChallenge orig, bool hidden)
+        {
+            if (WConfig.cfgRandom_Difficulty.Value)
+            {
+                float temp = ExpeditionData.challengeDifficulty;
+                ExpeditionData.challengeDifficulty = UnityEngine.Random.Range(ExpeditionData.challengeDifficulty/2f, 1f);
+                if (ExpeditionData.challengeDifficulty < temp)
+                {
+                    ExpeditionData.challengeDifficulty = temp;
+                }
+                var temp2 = orig(hidden);
+                ExpeditionData.challengeDifficulty = temp;
+                return temp2;
+            }
+            return orig(hidden);
         }
 
         private static void VistaChallenge_Generate(ILContext il)
@@ -282,61 +315,7 @@ namespace ExpeditionExtraConfig
 
         }
 
-        public static void UndoRemovedHiddenChallenges()
-        {
-            On.Expedition.PearlDeliveryChallenge.CanBeHidden += (orig, self) =>
-            {
-                if (WConfig.cfgHiddenDeliveries.Value)
-                {
-                    return true;
-                }
-                return orig(self);
-            };
-            On.Expedition.PearlHoardChallenge.CanBeHidden += (orig, self) =>
-            {
-                if (WConfig.cfgHiddenDeliveries.Value)
-                {
-                    return true;
-                }
-                return orig(self);
-            };
-            On.Expedition.NeuronDeliveryChallenge.CanBeHidden += (orig, self) =>
-            {
-                if (WConfig.cfgHiddenDeliveries.Value)
-                {
-                    return true;
-                }
-                return orig(self);
-            };
-
-            On.Expedition.PearlHoardChallenge.Generate += (orig, self) =>
-            {
-                if (WConfig.cfgHiddenDeliveries.Value)
-                {
-                    Challenge temp = orig(self);
-                    if (temp.hidden)
-                    {
-                        (temp as PearlHoardChallenge).amount = (int)Mathf.Lerp(2f, 3f, ExpeditionData.challengeDifficulty);
-                        return temp;
-                    }
-                }
-                return orig(self);
-            };
-            On.Expedition.NeuronDeliveryChallenge.Generate += (orig, self) =>
-            {
-                if (WConfig.cfgHiddenDeliveries.Value)
-                {
-                    Challenge temp = orig(self);
-                    if (temp.hidden)
-                    {
-                        (temp as NeuronDeliveryChallenge).neurons = Mathf.RoundToInt(UnityEngine.Random.Range(1f, Mathf.Lerp(1f, 2f, Mathf.InverseLerp(0.4f, 1f, ExpeditionData.challengeDifficulty))));
-                        return temp;
-                    }
-                }
-                return orig(self);
-            };
-        }
- 
+     
         public static int Missing_MS_LM(On.Expedition.PearlDeliveryChallenge.orig_RegionPoints orig, PearlDeliveryChallenge self)
         {
             if (WConfig.cfgVistaPearlScore.Value)

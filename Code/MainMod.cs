@@ -12,7 +12,7 @@ using HUD;
 
 namespace ExpeditionExtraConfig
 {
-    [BepInPlugin("wolfo.ExpeditionExtraConfig", "ExpeditionExtraConfig", "1.3.2")]
+    [BepInPlugin("wolfo.ExpeditionExtraConfig", "ExpeditionExtraConfig", "1.40")]
     public class ExpeditionExtraConfig : BaseUnityPlugin
     {
         public static bool initialized = false;
@@ -70,18 +70,51 @@ namespace ExpeditionExtraConfig
             On.Music.MusicPlayer.GameRequestsSong += OtherStuff.AlwaysPlayMusic;
 
             On.HUD.Map.ctor += VistaMap.AddVistaPointsToMap;
-            On.Menu.ChallengeSelectPage.UpdateChallengeButtons += FixPointsNotBeingDisplayed;
- 
+         
 
             NewMissions.Start();
+            NewPerks.Start();
             PassageStuff.Start();
             On.RainWorldGame.ctor += UnlockAll.SpawnRainbowCycleIfCheated;
             On.Menu.UnlockDialog.TogglePerk += UnlockAll.UnlockDialog_TogglePerk;
-
+             
             On.GateKarmaGlyph.ctor += RemoveRoboGate;
             On.HUD.Map.GateMarker.ctor += RemoveRoboGateMark;
             Futile.atlasManager.LoadAtlas("atlases/eec_sprites");
+
+             IL.Menu.ExpeditionMenu.ValidateQuestRewards += ExpeditionMenu_ValidateQuestRewards;
         }
+
+        private void ExpeditionMenu_ValidateQuestRewards(ILContext il)
+        {
+            //This rechecks how many perks you should have,
+            //And then, it does nothing
+            ILCursor c = new(il);
+            c.TryGotoNext(MoveType.After,
+            x => x.MatchLdstr("SET PERK LIMIT TO: "));
+ 
+            if (c.TryGotoPrev(MoveType.After,
+            x => x.MatchLdloc(0)))
+            {
+                c.EmitDelegate<Func<int, int>>((karma) =>
+                {
+                    ExpeditionData.perkLimit = karma;
+                    if (WConfig.cfgUnlockPerkSlots.Value)
+                    {
+                        ExpeditionData.perkLimit = 8;
+                    }
+                    ExpeditionData.perkLimit += WConfig.cfgBonusPerkSlots.Value;
+                    ExpLog.Log("Actually setting Perk Limit to : "+ExpeditionData.perkLimit);
+                    return karma;
+                });
+            }
+            else
+            {
+               Debug.Log("ExpeditionExtraConfig: ValidateQuestRewards Failed");
+            }
+        }
+
+       
 
         private void RemoveRoboGateMark(On.HUD.Map.GateMarker.orig_ctor orig, Map.GateMarker self, Map map, int room, RegionGate.GateRequirement karma, bool showAsOpen)
         {
@@ -124,17 +157,7 @@ namespace ExpeditionExtraConfig
             }
         }
 
-        private void FixPointsNotBeingDisplayed(On.Menu.ChallengeSelectPage.orig_UpdateChallengeButtons orig, Menu.ChallengeSelectPage self)
-        {
-            orig(self);
-            if (!self.menu.Translate("POINTS: <score>").EndsWith("<score>"))
-            {
-                string newValue = Menu.Remix.ValueConverter.ConvertToString<int>(ExpeditionGame.CalculateScore(true));
-                self.pointsLabel.text += " " + newValue;
-            }
-           
-        }
-
+        
         public void StartWithStomachPearl(On.Player.orig_ctor orig, Player self, AbstractCreature abstractCreature, World world)
         {
             orig(self, abstractCreature, world);
@@ -156,7 +179,6 @@ namespace ExpeditionExtraConfig
                     }
                     if (WConfig.cfgRivuletBall.Value && self.abstractCreature.Room.realizedRoom.shelterDoor != null)
                     {
-                        UnityEngine.Debug.Log("Rivulet is ballin");
                         WorldCoordinate pos3 = new WorldCoordinate(self.abstractCreature.Room.index, self.abstractCreature.Room.realizedRoom.shelterDoor.playerSpawnPos.x, self.abstractCreature.Room.realizedRoom.shelterDoor.playerSpawnPos.y, 0);
                         AbstractPhysicalObject abstractPhysicalBall = new AbstractPhysicalObject(world, MoreSlugcatsEnums.AbstractObjectType.EnergyCell, null, pos3, world.game.GetNewID());
                         self.abstractCreature.Room.entities.Add(abstractPhysicalBall);
@@ -190,15 +212,16 @@ namespace ExpeditionExtraConfig
                 bool visitsPebbleKarma = false;
                 if (saveStateNumber == SlugcatStats.Name.White)
                 {
-                    visitsPebbleKarma = true;
+                    visitsPebbleKarma = true; 
+                    if (WConfig.cfgSurvivor_StartWithPups.Value)
+                    {
+                        self.forcePupsNextCycle = 1;
+                    }
                 }
                 else if (saveStateNumber == SlugcatStats.Name.Yellow)
                 {
                     visitsPebbleKarma = true;
-                    if (WConfig.cfgMonk_StartWithPups.Value)
-                    {
-                        self.forcePupsNextCycle = 1;
-                    }
+                    
                 }
                 else if (saveStateNumber == SlugcatStats.Name.Red)
                 {
@@ -246,6 +269,12 @@ namespace ExpeditionExtraConfig
                 {
                     self.miscWorldSaveData.SLOracleState.neuronsLeft = 7; //Set to 5 due to Hunter
                 }
+
+                if (ExpeditionGame.activeUnlocks.Contains("unl-eec-Pups"))
+                {
+                    self.forcePupsNextCycle = 1;
+                }
+
             }
         }
 

@@ -238,12 +238,12 @@ namespace ExpeditionExtraConfig
 
                 float x = 260f;
                 //x = self.abandonButton.PosX;
-                string colorLabel = "Custom colors";
-                if (ModManager.CoopAvailable)
-                {
-                    colorLabel = "Custom colors";
-                }
-                instance.colorsCheckbox = new CheckBox(self.menu, self.menu.pages[1], instance, new Vector2(996f, 20f), 85f, self.menu.Translate(colorLabel), "COLORS", false);
+                /* string colorLabel = "Custom colors";
+                 if (ModManager.CoopAvailable)
+                 {
+                     colorLabel = "Custom colors";
+                 }*/
+                instance.colorsCheckbox = new CheckBox(self.menu, self.menu.pages[1], instance, new Vector2(996f, 20f), 85f, self.menu.Translate("Custom colors"), "COLORS", false);
                 MenuLabel label2 = instance.colorsCheckbox.label;
                 label2.pos.x = label2.pos.x + (85f - instance.colorsCheckbox.label.label.textRect.width - 5f);
                 instance.colorsCheckbox.selectable = true;

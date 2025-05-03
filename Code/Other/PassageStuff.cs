@@ -18,45 +18,57 @@ namespace ExpeditionExtraConfig
             On.Menu.SleepAndDeathScreen.AddExpeditionPassageButton += SleepAndDeathScreen_AddExpeditionPassageButton;
             On.Menu.SleepAndDeathScreen.AddSubObjects += SleepAndDeathScreen_AddSubObjects;
 
-            //For trying to reintroduce end game screens
-            //On.Menu.SleepAndDeathScreen.GetDataFromGame += SleepAndDeathScreen_GetDataFromGame;
-            //On.Menu.SleepAndDeathScreen.Singal += SleepAndDeathScreen_Singal;
+
+            On.Menu.SleepAndDeathScreen.Singal += SleepAndDeathScreen_Singal;
         }
 
-        public static void SleepAndDeathScreen_GetDataFromGame(On.Menu.SleepAndDeathScreen.orig_GetDataFromGame orig, Menu.SleepAndDeathScreen self, Menu.KarmaLadderScreen.SleepDeathScreenDataPackage package)
+       
+
+        public static WinState.EndgameID ReturnRandomEndgameScreen(WinState self)
         {
-            orig(self, package);
-            if (Custom.rainWorld.ExpeditionMode)
+            List<WinState.EndgameID> list = new List<WinState.EndgameID>();
+
+
+            for (int i = 0; i < self.endgameTrackers.Count; i++)
             {
-                if (WConfig.cfgPassageTeleportation.Value)
+                if (self.endgameTrackers[i].GoalFullfilled)
                 {
-                    self.endgameTokens = new Menu.EndgameTokens(self, self.pages[0], new Vector2(self.LeftHandButtonsPosXAdd + self.manager.rainWorld.options.SafeScreenOffset.x + 140f, Mathf.Max(15f, self.manager.rainWorld.options.SafeScreenOffset.y)), self.container, self.karmaLadder);
-                    self.pages[0].subObjects.Add(self.endgameTokens);
+                    list.Add(self.endgameTrackers[i].ID);
                 }
             }
-            
+            list.Remove(WinState.EndgameID.Survivor);
+            if (list.Count > 0)
+            {
+                return list[UnityEngine.Random.Range(0, list.Count)];
+            }
+            return (WinState.EndgameID.Survivor);
         }
 
         private static void SleepAndDeathScreen_Singal(On.Menu.SleepAndDeathScreen.orig_Singal orig, Menu.SleepAndDeathScreen self, Menu.MenuObject sender, string message)
         {
-            orig(self, sender, message);
+    
             if (message == "EXPPASSAGE")
             {
-                if (ModManager.Expedition && self.manager.rainWorld.ExpeditionMode && ExpeditionData.earnedPassages == 0)
+                if (ModManager.Expedition && self.manager.rainWorld.ExpeditionMode && ExpeditionData.earnedPassages > 0 && Perk_Passages.NormalPassage)
                 {
+                    ExpeditionData.earnedPassages--;
+                    self.PlaySound(SoundID.MENU_Passage_Button);
                     if (self.proceedWithEndgameID == null)
                     {
-                        self.proceedWithEndgameID = self.winState.GetNextEndGame();
+                        self.proceedWithEndgameID = ReturnRandomEndgameScreen(self.winState);
                         if (self.proceedWithEndgameID != null)
                         {
-                            self.endgameTokens.Passage(self.proceedWithEndgameID);
-                            self.endGameSceneCounter = 1;
-                            self.PlaySound(SoundID.MENU_Passage_Button);
+                            //self.endgameTokens.Passage(self.proceedWithEndgameID);
+                            //self.endGameSceneCounter = 1;
+                            self.manager.RequestMainProcessSwitch(ProcessManager.ProcessID.CustomEndGameScreen);
                             return;
                         }
                     }
+                    self.manager.RequestMainProcessSwitch(ProcessManager.ProcessID.FastTravelScreen);
+                    return;
                 }
             }
+            orig(self, sender, message);
         }
 
         public static void SleepAndDeathScreen_AddSubObjects(On.Menu.SleepAndDeathScreen.orig_AddSubObjects orig, Menu.SleepAndDeathScreen self)
@@ -64,7 +76,7 @@ namespace ExpeditionExtraConfig
             orig(self);
             if (ModManager.Expedition && self.manager.rainWorld.ExpeditionMode)
             {
-                if (!ExpeditionGame.activeUnlocks.Contains("unl-passage") && (WConfig.cfgPassageTeleportation.Value || WConfig.cfgInfinitePassage.Value))
+                if (!ExpeditionGame.activeUnlocks.Contains("unl-passage") && (Perk_Passages.NormalPassage || WConfig.cfgInfinitePassage.Value))
                 {
                     ExpLog.Log("Add Expedition Passage through not normal means.");
                     self.AddExpeditionPassageButton();
@@ -79,7 +91,7 @@ namespace ExpeditionExtraConfig
             {
                 ExpeditionData.earnedPassages = 255;
             }
-            else if (WConfig.cfgPassageTeleportation.Value)
+            else if (Perk_Passages.NormalPassage)
             {
                 for (int i = 0; i < self.saveState.deathPersistentSaveData.winState.endgameTrackers.Count; i++)
                 {

@@ -24,6 +24,57 @@ namespace ExpeditionExtraConfig
     {
 
 		public static WConfig instance = new WConfig();
+        public static Configurable<bool> cfgRandom_Difficulty = instance.config.Bind("cfgRandom_Difficulty", false,
+          new ConfigurableInfo("Challenges will be of a random difficulty level, but never lower than what is selected.", null, "", new object[]
+          {
+                    "Randomize Difficulty"
+          }));
+
+        public static Configurable<bool> cfgHidden_Passage = instance.config.Bind("cfgHidden_Passage", true,
+          new ConfigurableInfo("Allow Passage challenges to be Hidden", null, "", new object[]
+          {
+                    "Hidden Passage"
+          }));
+ 
+        public static Configurable<bool> cfgHidden_Hunting = instance.config.Bind("cfgHidden_Hunting", true,
+          new ConfigurableInfo("Allow Hunting challenges to be Hidden", null, "", new object[]
+          {
+                    "Hidden Hunting"
+          }));
+        public static Configurable<bool> cfgHidden_ItemCollecting = instance.config.Bind("cfgHidden_ItemCollecting", true,
+           new ConfigurableInfo("Allow Item Hoarding challenges to be Hidden", null, "", new object[]
+           {
+                    "Hidden Item Collecting"
+           }));
+        public static Configurable<bool> cfgHidden_Delivery = instance.config.Bind("cfgHidden_Delivery", false,
+          new ConfigurableInfo("Allow Pearl & Neuron Delivery challenges to be Hidden. Vanilla is false.", null, "", new object[]
+          {
+                    "Hidden Deliveries"
+          }));
+ 
+        public static Configurable<bool> cfgHidden_PearlHoard = instance.config.Bind("cfgHidden_PearlHoard", false,
+            new ConfigurableInfo("Allow Pearl Hoarding challenges to be Hidden", null, "", new object[]
+            {
+                    "Hidden Pearl Hoarding"
+            }));
+        public static Configurable<bool> cfgHidden_EchoVista = instance.config.Bind("cfgHidden_EchoVista", true,
+          new ConfigurableInfo("Allow Echo & Vista Visiting challenges to be Hidden", null, "", new object[]
+          {
+                    "Hidden Vistas & Echo"
+          }));
+            public static Configurable<bool> cfgHidden_Score = instance.config.Bind("cfgHidden_Score", true,
+          new ConfigurableInfo("Allow Cycle & Overall Score challenges to be Hidden", null, "", new object[]
+          {
+                    "Hidden Score Challenges"
+          }));
+        public static Configurable<bool> cfgHidden_Filter = instance.config.Bind("cfgHidden_Filter", false,
+     new ConfigurableInfo("Hidden Challenges still respect the challenge filter.\nThis can be easily abused which is why it's not in vanilla.", null, "", new object[]
+     {
+                    "Hidden Challenge Filter"
+     }));
+
+ 
+
 
 
         public static Configurable<bool> cfgHoardingBonus = instance.config.Bind("cfgHoardingBonus", true,
@@ -71,17 +122,17 @@ namespace ExpeditionExtraConfig
            {
                     "Vistas - Waterfront Facility"
            }));
-        public static Configurable<bool> cfgVista_MS = instance.config.Bind("cfgVista_MS", false,
+        public static Configurable<bool> cfgVista_MS = instance.config.Bind("cfgVista_MS", true,
            new ConfigurableInfo("For Rivulet, Add Vista Spots in Submerged Superstructer. All will be located before the Heart.\nLocated in : MS_AI |  MS_AIR03 | MS_FARSIDE", null, "", new object[]
            {
                     "Vistas - Submerged Superstructure"
            }));
-        public static Configurable<bool> cfgVista_SS = instance.config.Bind("cfgVista_SS", false,
+        public static Configurable<bool> cfgVista_SS = instance.config.Bind("cfgVista_SS", true,
            new ConfigurableInfo("Add Vista Spots in Five Pebbles.\nLocated in : SS_D04 | SS_E05 | SS_I03", null, "", new object[]
            {
                     "Vistas - Five Pebbles"
            }));
-        public static Configurable<bool> cfgVista_OE = instance.config.Bind("cfgVista_OE", false,
+        public static Configurable<bool> cfgVista_OE = instance.config.Bind("cfgVista_OE", true,
                    new ConfigurableInfo("Allow Outer Expanse Vistas for Monk & Survivor.", null, "", new object[]
                    {
                     "Outer Expanse for Monk & Survivor"
@@ -118,7 +169,7 @@ namespace ExpeditionExtraConfig
             }));
 
         public static Configurable<bool> cfgPassageTeleportation = instance.config.Bind("cfgPassageTeleportation", false, 
-        new ConfigurableInfo("Completed passages will grant teleportation tokens. Will work even without activating the perk. \nCompleting challenges with the 'Enable Passages' perk will still grant passages, so it still has value.", null, "", new object[]
+        new ConfigurableInfo("Completed passages will grant teleportation tokens. This is also available as a Perk, if you don't want it for free.\nCompleting challenges with the 'Enable Passages' perk will still grant passages, so it still has value.", null, "", new object[]
             {
                 "Passage Teleports"
             }));
@@ -158,6 +209,11 @@ namespace ExpeditionExtraConfig
            new ConfigurableInfo("Eggspedition easter egg that makes you glow Rainbow that requires you to stand in a specific spot as each Slugcat.\nNo Unlock config is permament.", null, "", new object[]
            {
                 "Unlock Rainbow"
+           }));
+        public static Configurable<int> cfgBonusPerkSlots = instance.config.Bind("cfgBonusPerkSlots", 0,
+           new ConfigurableInfo("Grants extra perk slots.", new ConfigAcceptableRange<int>(0, 30) , "", new object[]
+           {
+                "Extra Perk Slots"
            }));
         public static Configurable<bool> cfgUnlockPerkSlots = instance.config.Bind("cfgUnlockPerkSlots", false,
             new ConfigurableInfo("Sets perk slots to 8, the highets possible in vanilla.\nNo Unlock config is permament.", null, "", new object[]
@@ -207,7 +263,7 @@ namespace ExpeditionExtraConfig
  
         #region Rivulet
         public static Configurable<bool> cfgRivuletBall = instance.config.Bind("cfgRivuletBall", false,
-            new ConfigurableInfo("Rivulet starts with the Rarefaction Cell. Not all too useful but funny.", null, "", new object[]
+            new ConfigurableInfo("Rivulet starts with the Rarefaction Cell. This is also available as a Perk, if you don't want it for free.", null, "", new object[]
             {
                 "Rarefaction Cell Start"
             }));
@@ -224,7 +280,7 @@ namespace ExpeditionExtraConfig
                 "Strong Rain Duration"
           }));*/
 
-        public static Configurable<int> cfgRiv_HeavyRainChance = instance.config.Bind("cfgRiv_HeavyRainChance", 22,
+        public static Configurable<int> cfgRiv_HeavyRainChance = instance.config.Bind("cfgRiv_HeavyRainChance", 25,
            new ConfigurableInfo("Chance for above config on any given cycle. Sooner rain and likelier shelter failure. It will not get rerolled by dying.", new ConfigAcceptableRange<int>(5, 100), "", new object[]
            {
                 "Strong Rain Chance"
@@ -308,11 +364,11 @@ namespace ExpeditionExtraConfig
 
  
 
-		public static Configurable<bool> cfgHiddenDeliveries = instance.config.Bind("cfgHiddenDeliveries", false, 
+		/*public static Configurable<bool> cfgHiddenDeliveries = instance.config.Bind("cfgHiddenDeliveries", false, 
             new ConfigurableInfo("Allow Pearl Delivery, Pearl Hoarding & Neuron Gifting to be chosen as Hidden challenges again.\nThis was removed in a patch. Hidden gives 2x points as usual.", null, "", new object[]
 			{
 				"Hidden Deliveries"
-			}));
+			}));*/
 
         /*public static Configurable<bool> cfgPauseWarning = instance.config.Bind<bool>("cfgPauseWarning", false, 
             new ConfigurableInfo("Show the exit warning about losing Karma sooner.", null, "", new object[]
@@ -364,14 +420,14 @@ namespace ExpeditionExtraConfig
                 "Mother Passage"
             }));
 
-
-        public static Configurable<bool> cfgMonk_StartWithPups = instance.config.Bind("cfgMonk_StartWithPups", false,
-          new ConfigurableInfo("Monk will start his Expedition with 2 Pups, if pups are enabled.", null, "", new object[]
+        public static Configurable<bool> cfgSurvivor_StartWithPups = instance.config.Bind("cfgSurvivor_StartWithPups", false,
+          new ConfigurableInfo("Survivor will start his Expedition with 2 Pups, to make him more interesting. This is also available as a Perk, if you don't want it for free.", null, "", new object[]
           {
                 "Start with pups"
           }));
+ 
         public static Configurable<bool> cfgGourmand_StartWithPups = instance.config.Bind("cfgGourmand_StartWithPups", false,
-          new ConfigurableInfo("Gourmand will start his Expedition with 2 Pups, if pups are enabled.", null, "", new object[]
+          new ConfigurableInfo("Gourmand will start his Expedition with 2 Pups, like the first time rebooting into his campaign after finishing it.", null, "", new object[]
           {
                 "Start with pups"
           }));
@@ -500,7 +556,8 @@ namespace ExpeditionExtraConfig
                 new VanillaPreset<int>(cfgSaint_MaxKarma, 5, 6),
                 new VanillaPreset<int>(cfgRiv_HeavyRainChance, 100, 22),
                 new VanillaPreset<int>(cfgRiv_ShelterFailRate, 20, 30),
- 
+new VanillaPreset<int>(cfgBonusPerkSlots, 0, 30),
+
             };
             floatPresets = new List<VanillaPreset<float>>()
             {
@@ -514,7 +571,6 @@ namespace ExpeditionExtraConfig
                 new VanillaPreset<bool>(cfgMaxKarmaPebbles, false, true),
                 new VanillaPreset<bool>(cfgMonk_CombatScore, false, true),
                 new VanillaPreset<bool>(cfgPupsMotherAchievement, false, true),
-                new VanillaPreset<bool>(cfgHiddenDeliveries, false, true),
                 new VanillaPreset<bool>(cfgShowVistaOnMap, false, true),
                 new VanillaPreset<bool>(cfgRemoveRoboLock, false, true),
                 new VanillaPreset<bool>(cfgPassageTeleportation, false, true),
@@ -524,7 +580,7 @@ namespace ExpeditionExtraConfig
                 new VanillaPreset<bool>(cfgPupsSpawnNonDefault, false, true),
                 new VanillaPreset<bool>(cfgPupsSpawnFrequently, false, true),
                 new VanillaPreset<bool>(cfgMonk_CombatScore, false, true),
-                new VanillaPreset<bool>(cfgMonk_StartWithPups, false, true),
+                new VanillaPreset<bool>(cfgSurvivor_StartWithPups, false, true),
                 new VanillaPreset<bool>(cfgGourmand_StartWithPups, false, true),
                 new VanillaPreset<bool>(cfgStomachPearl, false, true),
                 new VanillaPreset<bool>(cfgArti_MaxKarmaBool, false, true),
@@ -552,6 +608,20 @@ namespace ExpeditionExtraConfig
                   new VanillaPreset<bool>(cfgSnowMeter, false, true),
                 
                 //new VanillaPreset<bool>(cfgUnlockJukebox, false, true),
+                new VanillaPreset<bool>(cfgHidden_Delivery, false, true),
+            new VanillaPreset<bool>(cfgHidden_EchoVista, false, true),
+            new VanillaPreset<bool>(cfgHidden_PearlHoard, false, true),
+   
+new VanillaPreset<bool>(cfgRandom_Difficulty, false, true),
+new VanillaPreset<bool>(cfgHidden_Filter, false, true),
+
+            new VanillaPreset<bool>(cfgHidden_Score, true, true),
+ 
+            new VanillaPreset<bool>(cfgHidden_Hunting, true, true),
+            new VanillaPreset<bool>(cfgHidden_ItemCollecting, true, true),
+            new VanillaPreset<bool>(cfgHidden_Passage, true, true),
+ 
+
 
             };
         }
@@ -563,7 +633,7 @@ namespace ExpeditionExtraConfig
             OpTab opTab = this.Tabs[tabIndex];
             float num = 40f;
             float horizontal = 20f;
-            float startingHeight = (tabIndex == 1 ? 554f : 500f)-8f;
+            float startingHeight = (tabIndex >= 1 ? 554f : 500f)-8f;
             float height = startingHeight;
 
             UIconfig uiconfig = null;
@@ -582,8 +652,6 @@ namespace ExpeditionExtraConfig
                 {
 
                 }
-
-
                 if (i == splitAfter)
                 {
                     horizontal += 300f;
@@ -638,6 +706,14 @@ namespace ExpeditionExtraConfig
                         else if (lists[i][j] == cfgVista_OE)
                         {
                             color = PlayerGraphics.DefaultSlugcatColor(SlugcatStats.Name.Yellow);
+                        }
+                        else if (lists[i][j] == cfgHidden_Filter)
+                        {
+                            color = new Color(0.85f, 0.35f, 0.4f);
+                        }
+                        else
+                        {
+                            color = Menu.MenuColorEffect.rgbMediumGrey;
                         }
                     }
                    
@@ -854,6 +930,7 @@ namespace ExpeditionExtraConfig
             #region Tab Character
             colors = new Color[]
              {
+                  Color.white,
                 Yellow,
                 Gourmand,
                 Red,
@@ -866,8 +943,12 @@ namespace ExpeditionExtraConfig
             {
                 new ConfigurableBase[]
                 {
+                    cfgSurvivor_StartWithPups,
+                },
+                new ConfigurableBase[]
+                {
                     cfgMonk_CombatScore,
-                    cfgMonk_StartWithPups,
+                    //cfgMonk_StartWithPups,
                 },
                 new ConfigurableBase[]
                 {
@@ -922,7 +1003,7 @@ namespace ExpeditionExtraConfig
                  "",
              };
 
-            instance.PopulateWithConfigs(1, array, null, colors, 5);
+            instance.PopulateWithConfigs(1, array, null, colors, 6);
             #endregion
             #region Challenges
             array = new ConfigurableBase[][]
@@ -930,7 +1011,7 @@ namespace ExpeditionExtraConfig
                 new ConfigurableBase[]
                 {
                     cfgShowVistaOnMap,
-                     cfgVistaCircle,
+                    cfgVistaCircle,
                     cfgVista_SS,
                     cfgVista_LM,
                     cfgVista_MS,
@@ -951,6 +1032,13 @@ namespace ExpeditionExtraConfig
                     cfgVistaPearlScore,
                     cfgSaintSubmergedEcho,
                     //cfgSaintAscendPointPenalty,
+                    cfgRandom_Difficulty,
+                },
+                 new ConfigurableBase[]
+                {
+                    cfgHidden_Delivery,
+                    cfgHidden_PearlHoard,
+                    cfgHidden_Filter,
                 },
                 new ConfigurableBase[]
                 {
@@ -963,6 +1051,7 @@ namespace ExpeditionExtraConfig
                  "Vista",
                  "Hunting",
                  "Challenges",
+                 "Hidden",
                  "Misc",
              };
             instance.PopulateWithConfigs(2, array, names, null, 2);
@@ -978,6 +1067,7 @@ namespace ExpeditionExtraConfig
             array[0] = new ConfigurableBase[]
            {
                cfgInfinitePassage,
+               cfgBonusPerkSlots,
                 cfgUnlockJukebox,
                 cfgUnlockEgg,
                 cfgUnlockPerkSlots,
