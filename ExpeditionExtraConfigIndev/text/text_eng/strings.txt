@@ -21,4 +21,6 @@ Burden_Rain_Desc|Cycles will be shorter and Shelter failure will occur more ofte
 Jukebox_Autoplay_Name|Auto
 Jukebox_Autoplay_Desc|Tracks play one after another
 
- 
+Mission_Rubicon|ReRubicon
+Mission_TimeTravelFuture|Untold Futures
+Mission_TimeTravelPast|Unseen Pasts
