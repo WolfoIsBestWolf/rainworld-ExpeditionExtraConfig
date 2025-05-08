@@ -47,7 +47,7 @@ namespace ExpeditionExtraConfig
             orig(self);
             if (autoplayButton != null && (autoplayButton.Selected || autoplayButton.MouseOver))
             {
-                self.infoLabel.text = "Tracks play one after another";
+                self.infoLabel.text = T.Translate("Jukebox_Autoplay_Desc");
                 self.infoLabelFade = 1f;
             }
         }

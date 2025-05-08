@@ -11,20 +11,20 @@ using UnityEngine;
  
 namespace ExpeditionExtraConfig
 {
-    public class Perk_ExplosiveSpear : Modding.Expedition.CustomPerk
+    public class Perk_FireSpear : Modding.Expedition.CustomPerk
     {
         public override string ID
         {
             get
             {
-                return "unl-eec-ExplosiveSpear";
+                return "unl-eec-FireSpear";
             }
         }
         public override bool UnlockedByDefault
         {
             get
             {
-                return true;
+                return WConfig.cfgNewPerksForceUnlock.Value;
             }
         }
         public override Color Color
@@ -52,6 +52,7 @@ namespace ExpeditionExtraConfig
         {
             get
             {
+                return T.Translate("Perk_FireSpear_Desc");
                 return "Start the expedition with a Explosive Spear";
             }
         }
@@ -59,6 +60,7 @@ namespace ExpeditionExtraConfig
         {
             get
             {
+                return T.Translate("Perk_EnergyCell_Name");
                 return "Explosive Spear";
             }
         }

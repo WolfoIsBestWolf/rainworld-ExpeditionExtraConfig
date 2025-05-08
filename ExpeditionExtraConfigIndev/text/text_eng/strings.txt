@@ -1,0 +1,24 @@
+﻿Perk_MonkGate_Name|Unlock Karma Gates
+Perk_MonkGate_Desc|Gates will remain open permanently after passing through them once
+Perk_SpearWall_Name|Dislodge Spears
+Perk_SpearWall_Desc|Allows the player to dislodge spears that are embedded in walls
+Perk_FireSpear_Name|Explosive Spear
+Perk_FireSpear_Desc|Start the expedition with a Explosive Spear
+Perk_EnergyCell_Name|Rarefaction Cell
+Perk_EnergyCell_Desc|Start the expedition with a Rarefaction Cell
+Perk_Passage_Name|Classic Passages
+Perk_Passage_Desc|Allow the use of Passages. Earn passages by completing sleep screen goals as you would in campaigns.
+Perk_Mother_Name|Mother
+Perk_Mother_Desc|Start the expedition with a family of 2 Slugpups
+
+Perk_Already_Remix|This perk is already enabled for free as a Remix option.<LINE>You cannot choose it again.
+Perk_Already_Option|This perk is already enabled for free as a Expedition Extras option.<LINE>You cannot choose it again.
+
+Burden_Rain_Name|Stormy
+Burden_Rain_Desc|Cycles will be shorter and Shelter failure will occur more often.
+
+
+Jukebox_Autoplay_Name|Auto
+Jukebox_Autoplay_Desc|Tracks play one after another
+
+ 

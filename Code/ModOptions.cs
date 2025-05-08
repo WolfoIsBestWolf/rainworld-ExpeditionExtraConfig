@@ -24,6 +24,25 @@ namespace ExpeditionExtraConfig
     {
 
 		public static WConfig instance = new WConfig();
+
+        public static Configurable<bool> cfgNewPerksForceUnlock = instance.config.Bind("cfgNewPerksForceUnlock", false,
+          new ConfigurableInfo("Perks added by mod do not require to be unlocked.", null, "", new object[]
+          {
+                    "Unlock all new perks"
+          }));
+
+        public static Configurable<bool> cfgCycle0_Save = instance.config.Bind("cfgCycle0_Save", false,
+          new ConfigurableInfo("The game will save immediately upon starting an Expedition", null, "", new object[]
+          {
+                    "Save Cycle 0"
+          }));
+        public static Configurable<bool> cfgCycle0_Karma = instance.config.Bind("cfgCycle0_Karma", false,
+          new ConfigurableInfo("You wont lose Karma or game over on Cycle 0 / the start of an expedition.", null, "", new object[]
+          {
+                    "Lossless Cycle 0"
+          }));
+
+
         public static Configurable<bool> cfgRandom_Difficulty = instance.config.Bind("cfgRandom_Difficulty", false,
           new ConfigurableInfo("Challenges will be of a random difficulty level, but never lower than what is selected.", null, "", new object[]
           {

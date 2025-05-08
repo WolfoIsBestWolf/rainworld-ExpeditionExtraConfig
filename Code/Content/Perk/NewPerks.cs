@@ -10,6 +10,8 @@ using System.IO;
 using Modding.Expedition;
 using Menu;
 using Mono.Cecil.Cil;
+using System;
+using static Expedition.ExpeditionProgression;
 
 namespace ExpeditionExtraConfig
 {
@@ -18,24 +20,58 @@ namespace ExpeditionExtraConfig
 
         public static void Start()
         {
-            On.Menu.UnlockDialog.TogglePerk += BlockPerks;
-
-        
             CustomPerks.Register(new CustomPerk[] 
             {
-                new Perk_ExplosiveSpear(),
-                new Perk_EnergyCell(),
+                new Perk_FireSpear(),
                 new Perk_MonkGate(),
                 new Perk_Passages(),
+                new Perk_SpearWall(),
+                new Perk_EnergyCell(),
                 new Perk_Pups(),
-                //new Perk_SpearWall(),
-
             });
 
             IL.Room.Loaded += RoomSpawn; 
             On.Expedition.ExpeditionProgression.UnlockName += ExpeditionProgression_UnlockName;
-          
-            
+
+            On.Menu.ExpeditionMenu.ValidateQuestRewards += ManageUnlocks;
+        }
+
+        private static void ManageUnlocks(On.Menu.ExpeditionMenu.orig_ValidateQuestRewards orig, ExpeditionMenu self)
+        {
+            if (!WConfig.cfgNewPerksForceUnlock.Value)
+            {
+                //Remove all incase they were Permamently gotten through the config.
+                //Then recheck if actually earned
+                //Clunky but such it is
+                ExpeditionData.unlockables.Remove("unl-eec-EnergyCell");
+                ExpeditionData.unlockables.Remove("unl-eec-FireSpear");
+                ExpeditionData.unlockables.Remove("unl-eec-MonkGate");
+                ExpeditionData.unlockables.Remove("unl-eec-Passages");
+                ExpeditionData.unlockables.Remove("unl-eec-Pups");
+                //ExpeditionData.unlockables.Remove("unl-eec-SpearWall");
+            }            
+            orig(self);
+            //Seems to work fine as a "Validator"
+            if (!WConfig.cfgNewPerksForceUnlock.Value)
+            {
+                ExpeditionProgression.EvaluateExpedition(new ExpeditionProgression.WinPackage
+                {
+                    points = 0,
+                    challenges = new List<Challenge>(),
+                    slugcat = MoreSlugcats.MoreSlugcatsEnums.SlugcatStatsName.Slugpup,
+                });
+            }
+        }
+
+     
+        public static void RemoveAllModdedQuests()
+        {
+            var modQuests = ExpeditionProgression.customQuests["ExpeditionExtraConfig"];
+            foreach (var mod in modQuests)
+            {
+                ExpLog.Log(mod.key);
+                ExpeditionData.completedQuests.Remove(mod.key);
+            }
         }
 
 
@@ -76,31 +112,6 @@ namespace ExpeditionExtraConfig
         {
             return orig(key);
         }
-
-        public static void BlockPerks(On.Menu.UnlockDialog.orig_TogglePerk orig, UnlockDialog self, string message)
-        {
-            if (!ModManager.MSC || ExpeditionData.slugcatPlayer == SlugcatStats.Name.White && WConfig.cfgSurvivor_StartWithPups.Value || ExpeditionData.slugcatPlayer == MoreSlugcatsEnums.SlugcatStatsName.Gourmand && WConfig.cfgGourmand_StartWithPups.Value)
-            {
-                if (message == "unl-eec-Pups")
-                {
-                    self.PlaySound(SoundID.MENU_Error_Ping);
-                    return;
-                }
-            }
-            else if (ExpeditionData.slugcatPlayer == MoreSlugcatsEnums.SlugcatStatsName.Rivulet && WConfig.cfgRivuletBall.Value)
-            {
-                if (message == "unl-eec-EnergyCell")
-                {
-                    self.PlaySound(SoundID.MENU_Error_Ping);
-                    return;
-                }
-            }
-            orig(self, message);
-        }
-
-
-       
-
 
     }
 }

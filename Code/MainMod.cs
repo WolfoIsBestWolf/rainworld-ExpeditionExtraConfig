@@ -12,7 +12,7 @@ using HUD;
 
 namespace ExpeditionExtraConfig
 {
-    [BepInPlugin("wolfo.ExpeditionExtraConfig", "ExpeditionExtraConfig", "1.40")]
+    [BepInPlugin("wolfo.ExpeditionExtraConfig", "ExpeditionExtraConfig", "1.5.0")]
     public class ExpeditionExtraConfig : BaseUnityPlugin
     {
         public static bool initialized = false;

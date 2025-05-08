@@ -24,7 +24,7 @@ namespace ExpeditionExtraConfig
         {
             get
             {
-                return true;
+                return WConfig.cfgNewPerksForceUnlock.Value;
             }
         }
         public override Color Color
@@ -52,6 +52,7 @@ namespace ExpeditionExtraConfig
         {
             get
             {
+                return T.Translate("Perk_Mother_Desc");
                 return "Start the expedition with a family of 2 Slugpups";
             }
         }
@@ -59,6 +60,7 @@ namespace ExpeditionExtraConfig
         {
             get
             {
+                return T.Translate("Perk_Mother_Name");
                 return "Mother";
             }
         }
@@ -69,5 +71,24 @@ namespace ExpeditionExtraConfig
                 return "ExpeditionExtraConfig";
             }
         }
+
+        public override bool AvailableForSlugcat(SlugcatStats.Name name)
+        {
+            if (!ModManager.MSC)
+            {
+                return false;
+            }
+            if (ExpeditionData.slugcatPlayer == SlugcatStats.Name.White && WConfig.cfgSurvivor_StartWithPups.Value)
+            {
+                return false;
+            }     
+            if (ExpeditionData.slugcatPlayer == MoreSlugcatsEnums.SlugcatStatsName.Gourmand && WConfig.cfgGourmand_StartWithPups.Value)
+            {
+                return false;
+            }
+            return true;
+
+        }
+
     }
 }

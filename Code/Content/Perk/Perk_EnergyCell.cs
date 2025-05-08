@@ -24,7 +24,7 @@ namespace ExpeditionExtraConfig
         {
             get
             {
-                return true;
+                return WConfig.cfgNewPerksForceUnlock.Value;
             }
         }
         public override Color Color
@@ -52,6 +52,7 @@ namespace ExpeditionExtraConfig
         {
             get
             {
+                return T.Translate("Perk_EnergyCell_Desc");
                 return "Start the expedition with a Rarefaction Cell";
             }
         }
@@ -59,6 +60,7 @@ namespace ExpeditionExtraConfig
         {
             get
             {
+                return T.Translate("Perk_EnergyCell_Name");
                 return "Rarefaction Cell";
             }
         }
@@ -68,6 +70,19 @@ namespace ExpeditionExtraConfig
             {
                 return "ExpeditionExtraConfig";
             }
+        }
+
+        public override bool AvailableForSlugcat(SlugcatStats.Name name)
+        {
+            if (!ModManager.MSC)
+            {
+                return false;
+            }
+            if (ExpeditionData.slugcatPlayer == MoreSlugcatsEnums.SlugcatStatsName.Rivulet && WConfig.cfgRivuletBall.Value)
+            {
+                return false;
+            }
+            return true;
         }
     }
 }

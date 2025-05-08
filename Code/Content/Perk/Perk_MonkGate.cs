@@ -24,7 +24,7 @@ namespace ExpeditionExtraConfig
         {
             get
             {
-                return true;
+                return WConfig.cfgNewPerksForceUnlock.Value;
             }
         }
         public override Color Color
@@ -52,6 +52,11 @@ namespace ExpeditionExtraConfig
         {
             get
             {
+                if (ModManager.MMF && MMF.cfgGlobalMonkGates.Value)
+                {
+                    return T.TranslateLineBreak("Perk_Already_Remix");
+                }
+                return T.Translate("Perk_MonkGate_Desc");
                 return "Gates will remain open permanently after passing through them once.\nUnpickable if enabled in Remix.";
             }
         }
@@ -59,6 +64,7 @@ namespace ExpeditionExtraConfig
         {
             get
             {
+                return T.Translate("Perk_MonkGate_Name");
                 return "Unlock Karma Gates";
             }
         }
@@ -75,7 +81,11 @@ namespace ExpeditionExtraConfig
             {
                 return false;
             }
-            return name != SlugcatStats.Name.Yellow || !MMF.cfgGlobalMonkGates.Value;
+            if (ModManager.MMF && MMF.cfgGlobalMonkGates.Value)
+            {
+                return false;
+            }
+            return true;
         }
 
         public override void ApplyHooks()

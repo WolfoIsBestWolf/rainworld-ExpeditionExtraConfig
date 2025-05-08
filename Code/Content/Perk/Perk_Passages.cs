@@ -24,7 +24,7 @@ namespace ExpeditionExtraConfig
         {
             get
             {
-                return true;
+                return WConfig.cfgNewPerksForceUnlock.Value;
             }
         }
         public override Color Color
@@ -52,7 +52,11 @@ namespace ExpeditionExtraConfig
         {
             get
             {
-                return "Allow the use of Passages. Earn passages by completing sleep screen goals like in campaigns.\nUnselectable if always enabled in settings.";
+                if (ModManager.MMF && MMF.cfgGlobalMonkGates.Value)
+                {
+                    return T.TranslateLineBreak("Perk_Already_Option");
+                }
+                return T.Translate("Perk_Passage_Desc");
                 //return "Enables the use of passages during expeditions which can be earned by completing the trackers on the sleep screen, like in campaigns.\nUnselectable if always enabled in settings.";
             }
         }
@@ -60,7 +64,8 @@ namespace ExpeditionExtraConfig
         {
             get
             {
-                return "Goal Passages";
+                return T.Translate("Perk_Passage_Name");
+                return "Classic Passages";
             }
         }
         public override string Group
